@@ -4,6 +4,8 @@ description: "Complete derivations of recurring structural formulas, from first 
 ---
 ## Open Formula
 
+![Chain of equations leading to the final boxed formula](cover_seriesB.png)
+
 Structural formulas are used daily and derived rarely. This series opens them up.
 
 Each derivation starts from a physical hypothesis — plane sections remain plane, small deformations, linear elasticity — and reaches the final boxed result through a chain of numbered equations. Every step carries its validity limits alongside the formula, not buried in a footnote or left to the reader's memory. Cross-references are explicit: "(3) into (7)" tells you exactly which equations combine and where.
