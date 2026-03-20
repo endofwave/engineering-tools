@@ -1,0 +1,87 @@
+baseURL: "https://endofwave.github.io/engineering-tools/"
+languageCode: "en"
+title: "Engineering Tools"
+theme: "PaperMod"
+
+# ── Build ────────────────────────────────────────────────────────
+enableRobotsTXT: true
+buildDrafts: false
+buildFuture: false
+buildExpired: false
+minify:
+  disableXML: true
+  minifyOutput: true
+
+# ── PaperMod parameters ─────────────────────────────────────────
+params:
+  env: production
+  title: "Engineering Tools"
+  description: "Open-source analytical pipelines and formula derivations for mechanical engineering"
+  author: "endofwave"
+  DateFormat: "2 January 2006"
+  defaultTheme: auto
+  ShowReadingTime: true
+  ShowShareButtons: false
+  ShowPostNavLinks: true
+  ShowBreadCrumbs: true
+  ShowCodeCopyButtons: true
+  ShowWordCount: false
+  ShowRssButtonInSectionTermList: false
+  UseHugoToc: true
+  homeInfoParams:
+    Title: "Engineering Tools"
+    Content: >
+      Open-source analytical pipelines and formula derivations
+      for mechanical engineering.
+      Series A — calculation tools extracted from technical papers,
+      with Python notebooks.
+      Series B — complete derivations of recurring structural formulas,
+      from first principles to final boxed result.
+  socialIcons:
+    - name: github
+      url: "https://github.com/endofwave/engineering-tools"
+  math: true
+
+# ── Menu ─────────────────────────────────────────────────────────
+menu:
+  main:
+    - identifier: series-a
+      name: "Series A — Papers → Tools"
+      url: /series-a/
+      weight: 10
+    - identifier: series-b
+      name: "Series B — Open Formula"
+      url: /series-b/
+      weight: 20
+    - identifier: search
+      name: Search
+      url: /search/
+      weight: 30
+
+# ── Outputs (for search) ────────────────────────────────────────
+outputs:
+  home:
+    - HTML
+    - RSS
+    - JSON
+
+# ── Markup ───────────────────────────────────────────────────────
+markup:
+  highlight:
+    codeFences: true
+    guessSyntax: true
+    lineNos: false
+    style: monokai
+  goldmark:
+    renderer:
+      unsafe: true
+    extensions:
+      passthrough:
+        delimiters:
+          block:
+            - - "$$"
+              - "$$"
+          inline:
+            - - "$"
+              - "$"
+        enable: true
