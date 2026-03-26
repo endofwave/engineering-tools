@@ -361,7 +361,8 @@ Vertical lines: current load (1000 N) and static rating ( $C_0 = 11.2$ kN).
 Only **numpy** and **matplotlib** — both pre-installed in Google Colab.
 
 ### Running
-
+1. Open **[hertz\_contact\_stress\_pipeline.ipynb](https://colab.research.google.com/github/endofwave/engineering-tools/blob/main/static/notebooks/hertz_contact_stress_pipeline.ipynb)**
+   directly in Colab.
 2. Edit the **Input Parameters** cell with your bearing data.
 3. Run all cells (Runtime → Run all).
 
