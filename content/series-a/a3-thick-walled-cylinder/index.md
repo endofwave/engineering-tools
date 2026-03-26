@@ -304,7 +304,7 @@ this configuration.
 The Python notebook implements the full 7-node pipeline and runs directly on Google Colab
 with no installation required (numpy and matplotlib are preinstalled).
 
-[Open in Colab](https://colab.research.google.com/drive/1lH-gJE0l0TEgZcgaikAY5AgVm4ncoun_?usp=sharing)
+[Open in Colab](https://colab.research.google.com/github/endofwave/engineering-tools/blob/main/static/notebooks/a3_thick_walled_cylinder.ipynb)
 
 Modify only the cell marked **✏️ Input**. The parameters are:
 
