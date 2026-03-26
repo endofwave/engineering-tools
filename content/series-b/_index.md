@@ -4,7 +4,7 @@ description: "Complete derivations of recurring structural formulas, from first 
 ---
 ## Open Formula
 
-![Chain of equations leading to the final boxed formula](cover_seriesB.png)
+![Chain of equations leading to the final boxed formula](cover_seriesB.jpg)
 
 Structural formulas are used daily and derived rarely. This series opens them up.
 

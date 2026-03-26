@@ -3,7 +3,7 @@ title: "Series A — Papers → Tools"
 description: "Calculation pipelines extracted from technical papers, with Python notebooks"
 ---
 ## Papers → Tools
-![Paper transformed into a calculation pipeline](cover_seriesA.png)
+![Paper transformed into a calculation pipeline](cover_seriesA.jpg)
 
 Technical papers publish methods. This series makes them usable.
 
