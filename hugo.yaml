@@ -20,7 +20,7 @@ params:
   author: "endofwave"
   DateFormat: "2 January 2006"
   defaultTheme: auto
-  ShowReadingTime: true
+  ShowReadingTime: false
   ShowShareButtons: false
   ShowPostNavLinks: true
   ShowBreadCrumbs: true
