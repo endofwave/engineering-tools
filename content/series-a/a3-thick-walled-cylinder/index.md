@@ -304,7 +304,7 @@ this configuration.
 The Python notebook implements the full 7-node pipeline and runs directly on Google Colab
 with no installation required (numpy and matplotlib are preinstalled).
 
-[Open in Colab](https://colab.research.google.com) *(link placeholder — replace with the shared notebook URL)*
+[Open in Colab](https://drive.google.com/file/d/1cw7vXibglQB3qMSYmKK3bE7ARx4-TRJ1/view?usp=sharing)
 
 Modify only the cell marked **✏️ Input**. The parameters are:
 
