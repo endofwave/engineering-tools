@@ -1,0 +1,84 @@
+{{- define "main" }}
+
+{{/* ── HERO ─────────────────────────────────────────────────── */}}
+<div style="
+  width: 100%;
+  height: 420px;
+  overflow: hidden;
+  margin-bottom: 3rem;
+">
+  <img src="{{ "hero.jpg" | relURL }}"
+       alt="Engineering Tools"
+       style="width:100%; height:100%; object-fit:cover; opacity:0.85; display:block;">
+</div>
+
+{{/* ── INTRO TEXT ──────────────────────────────────────────── */}}
+<div style="max-width: 680px; margin: 0 auto 3.5rem; text-align: center; padding: 0 1rem;">
+  <h1 style="font-size: 1.8rem; margin-bottom: 1rem;">Engineering Tools</h1>
+  <p style="font-size: 1.05rem; line-height: 1.7; color: var(--secondary);">
+    Analytical pipelines extracted from technical papers and complete
+    derivations of structural formulas — each with declared inputs,
+    explicit steps, and a numerical verification case.
+    Two series, open source, ready to use.
+  </p>
+</div>
+
+{{/* ── SERIES CARDS ────────────────────────────────────────── */}}
+<div style="
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  max-width: 900px;
+  margin: 0 auto 4rem;
+  padding: 0 1rem;
+">
+
+  {{/* Card Serie A */}}
+  <a href="{{ "series-a/" | relURL }}" style="text-decoration: none; color: inherit;">
+    <div style="
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    "
+    onmouseover="this.style.boxShadow='0 4px 20px rgba(0,0,0,0.3)'"
+    onmouseout="this.style.boxShadow='none'">
+      <img src="{{ "series-a/cover_seriesA.jpg" | relURL }}"
+           alt="Series A"
+           style="width:100%; height:200px; object-fit:cover; display:block;">
+      <div style="padding: 1.2rem 1.4rem 1.4rem;">
+        <h2 style="font-size: 1.15rem; margin: 0 0 0.6rem;">Series A — Papers → Tools</h2>
+        <p style="font-size: 0.9rem; color: var(--secondary); margin: 0; line-height: 1.6;">
+          Calculation pipelines extracted from peer-reviewed papers.
+          Each node has declared inputs, a formula, and declared outputs.
+          Python notebook included.
+        </p>
+      </div>
+    </div>
+  </a>
+
+  {{/* Card Serie B */}}
+  <a href="{{ "series-b/" | relURL }}" style="text-decoration: none; color: inherit;">
+    <div style="
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    "
+    onmouseover="this.style.boxShadow='0 4px 20px rgba(0,0,0,0.3)'"
+    onmouseout="this.style.boxShadow='none'">
+      <img src="{{ "series-b/cover_seriesB.jpg" | relURL }}"
+           alt="Series B"
+           style="width:100%; height:200px; object-fit:cover; display:block;">
+      <div style="padding: 1.2rem 1.4rem 1.4rem;">
+        <h2 style="font-size: 1.15rem; margin: 0 0 0.6rem;">Series B — Open Formula</h2>
+        <p style="font-size: 0.9rem; color: var(--secondary); margin: 0; line-height: 1.6;">
+          Complete derivations of recurring structural formulas,
+          from first physical hypothesis to final boxed result.
+          Every assumption stated where it enters.
+        </p>
+      </div>
+    </div>
+  </a>
+
+</div>
+
+{{- end }}
