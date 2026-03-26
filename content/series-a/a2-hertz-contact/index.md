@@ -362,8 +362,8 @@ Only **numpy** and **matplotlib** — both pre-installed in Google Colab.
 
 ### Running
 
-1. Download **[hertz_contact_stress_pipeline.ipynb](/notebooks/hertz_contact_stress_pipeline.ipynb)**
-   and open it in Colab (or upload directly).
+1. Open **[hertz\_contact\_stress\_pipeline.ipynb](https://colab.research.google.com/github/endofwave/engineering-tools/blob/main/static/notebooks/hertz_contact_stress_pipeline.ipynb)**
+   directly in Colab.
 2. Edit the **Input Parameters** cell with your bearing data.
 3. Run all cells (Runtime → Run all).
 
