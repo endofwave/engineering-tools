@@ -61,7 +61,10 @@ The 26.9 mm ogive projectile at 277 m/s penetrates 167 mm into 35 MPa concrete �
 
 The pipeline is sequential with one bifurcation. Nodes 0–3 are always executed. Node 4 selects the depth formula based on whether $I$ exceeds the crater threshold $\pi k/4$. Node 5a (shallow) or 5b (deep) computes the dimensionless depth; Node 6 converts to metres or millimetres.
 
-[📄 Download: The A4 Ballistic Pipeline — slide deck (PDF)](/engineering-tools/pdf/The_A4_Ballistic_Pipeline.pdf)
+**[📄 Download: The A4 Ballistic Pipeline — slide deck (PDF)](The_A4_Ballistic_Pipeline.pdf)** - A visual representation of the calculation
+
+ **[📄Download The Theory Behind the Calculation (PDF)](TheoryBehindTheCalculation.pdf)** — 
+A visual walkthrough of the physics: from Buckingham Pi to cavity expansion to the final dimensionless equations.
 
 ---
 
