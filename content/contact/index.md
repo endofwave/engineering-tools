@@ -47,6 +47,7 @@ type: "page"
   <label for="message">Message:</label><br>
   <textarea id="message" name="message" rows="5" placeholder="How can I help you?" required class="formspree-textarea"></textarea>
   <br>
+  <input type="hidden" name="_next" value="https://endofwave.github.io/engineering-tools/success/">
   <button type="submit" style="padding: 10px 20px; cursor: pointer; border-radius: 4px; background-color: #007bff; color: white; border: none; font-weight: bold;">Send Message</button>
 </form>
 {{< /rawhtml >}}
