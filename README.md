@@ -1,56 +1,61 @@
-# Hertz Contact Stress Tool
+# Engineering Tools
 
-Analytical pipeline for Hertzian contact stress in deep groove ball bearings.
+Analytical calculation pipelines extracted from peer-reviewed papers and complete derivations of classical structural formulas — each with declared inputs, explicit intermediate steps, and a numerical verification case.
 
-**Live site:** `https://endofwave.github.io/hertz-contact-tool/`
+**Live site:** [endofwave.github.io/engineering-tools](https://endofwave.github.io/engineering-tools/)
 
-## What's inside
+No black boxes. Every formula is shown. Every number is traceable.
 
-| File | Description |
-|:-----|:------------|
-| `content/tools/hertz-contact/index.md` | Full pipeline documentation (5 nodes) with verification case |
-| `static/notebooks/hertz_contact_stress_pipeline.ipynb` | Colab-ready notebook (theory + code fused) |
-| `static/img/hertz_*.png` | Figures (pressure map, parametric plot) |
+---
 
-## Quick start
+## Series A — Papers → Tools
+
+Calculation pipelines restructured from peer-reviewed papers. Each tool ships with a Google Colab notebook (numpy + matplotlib, no other dependencies).
+
+| Tool | Topic | Paper | Notebook |
+|:-----|:------|:------|:---------|
+| A1 | Fatigue life of notched plates | Hazizi et al. (2023) | [Open in Colab](https://colab.research.google.com/github/endofwave/engineering-tools/blob/main/static/notebooks/A1_fatigue_notched_plate.ipynb) |
+| A2 | Hertz contact stress in deep groove ball bearings | Anoopnath et al. (2018) | [Open in Colab](https://colab.research.google.com/github/endofwave/engineering-tools/blob/main/static/notebooks/hertz_contact_stress_pipeline.ipynb) |
+| A3 | Thick-walled cylinder stress analysis (n coaxial rings) | Croccolo & Vincenzi (2009) | [Open in Colab](https://colab.research.google.com/github/endofwave/engineering-tools/blob/main/static/notebooks/A3_thick_walled_cylinder.ipynb) |
+| A4 | Penetration depth of rigid projectile into concrete | Li & Chen (2003) | [Open in Colab](https://colab.research.google.com/github/endofwave/engineering-tools/blob/main/static/notebooks/A4_penetration_depth.ipynb) |
+
+## Series B — Open Formula
+
+Complete derivations of recurring structural formulas, from first physical hypothesis to final boxed result.
+
+| Formula | Title |
+|:--------|:------|
+| B1 | Derivation of EI·y″ = M(x) |
+| B2 | Where P_cr = π²EI/L² comes from (Euler buckling) |
+| B3 | Curvature of a plane curve: κ = y″/(1+y'²)^(3/2) |
+| B4 | Where δ = PL³/(3EI) comes from (cantilever deflection) |
+
+## How to use
+
+**As a reader:** browse the [live site](https://endofwave.github.io/engineering-tools/). Each tool page walks through the calculation step by step.
+
+**As a user:** click "Open in Colab" on any tool page, modify the input parameters cell, press Run All. No installation, no environment setup.
+
+**As a developer:** clone the repo and run locally:
 
 ```bash
-# 1. Clone
-git clone https://github.com/endofwave/hertz-contact-tool.git
-cd hertz-contact-tool
-
-# 2. Add PaperMod theme
-git submodule add --depth=1 \
-  https://github.com/adityatelange/hugo-PaperMod.git themes/PaperMod
-
-# 3. Local preview
-hugo server -D
-# → open http://localhost:1313/hertz-contact-tool/
-
-# 4. Build for production
-hugo --gc --minify
+git clone https://github.com/endofwave/engineering-tools.git
+cd engineering-tools
+git submodule update --init --recursive
+hugo server
 ```
 
-## Deploy to GitHub Pages
+Requires Hugo extended ≥ 0.158.0 and the PaperMod theme (included as submodule).
 
-1. Push to GitHub (the repo name should match the `baseURL` path in `hugo.yaml`).
-2. Go to **Settings → Pages → Source** and select **GitHub Actions**.
-3. The workflow in `.github/workflows/hugo.yaml` builds and deploys automatically on push to `main`.
+## Built with
 
-**Before pushing**, edit `hugo.yaml`:
-- Update author name in `hugo.yaml` if desired.
+- [Hugo](https://gohugo.io/) + [PaperMod](https://github.com/adityatelange/hugo-PaperMod/)
+- GitHub Pages with GitHub Actions
+- Python notebooks: numpy + matplotlib only
 
-## Customise
+## Author
 
-- **Add a new tool:** create `content/tools/new-tool/index.md` with the same front matter pattern.
-- **Change theme colours:** override in `assets/css/extended/` (see PaperMod docs).
-- **Add a blog section:** create `content/posts/` with `_index.md`.
-
-## References
-
-- Anoopnath et al. (2018), *Materials Today: Proceedings* 5, 3283–3288.
-- Hamrock & Brewe (1983), *ASME J. Lub. Tech.* 105(2), 171–177.
-- Harris & Kotzalas (2006), *Rolling Bearing Analysis*, 5th ed.
+G. Ganz — Mechanical engineer
 
 ## License
 
