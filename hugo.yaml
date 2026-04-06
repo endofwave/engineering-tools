@@ -62,6 +62,10 @@ menu:
       name: About
       url: /about/
       weight: 40
+    - identifier: contact
+      name: Contact
+      url: /contact/
+      weight: 50
 
 # ── Outputs (for search) ────────────────────────────────────────
 outputs:
