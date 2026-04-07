@@ -1,13 +1,15 @@
 ---
-title: "Where δ = PL³/(3EI) comes from"
+title: "Derivation of Cantilever Tip Deflection δ = PL³/(3EI)"
 date: 2026-03-18
 math: true
+description: "Step-by-step derivation of the cantilever beam tip deflection formula from the moment-curvature relation, double integration, and boundary conditions."
+summary: "From the moment–curvature relation to the cantilever tip deflection δ = PL³/(3EI), step by step."
 tags:
   - structural-mechanics
   - cantilever
-  - deflection
+  - beam deflection
+  - double integration
   - derivation
-summary: "From the moment–curvature relation to the cantilever tip deflection, step by step."
 ---
 
 ## Where $\delta = \dfrac{PL^3}{3EI}$ comes from
@@ -16,7 +18,7 @@ Cantilever beam, concentrated load $P$ at the free end. The goal is the vertical
 
 Axis $x$ along the beam, origin at the fixed end, $x = L$ at the free end. Axis $y$ vertical, positive upward. $P > 0$ is the magnitude of the load, directed downward.
 
-![Cantilever setup](cantilever-setup.png)
+![Cantilever beam with tip point load — geometry and sign convention for deflection derivation](cantilever-setup.png)
 
 Cut at a generic section $x$. Free body of the segment from $x$ to $L$: the only external force is $P$ downward, applied at distance $(L - x)$ from the section. Moment equilibrium about the cut, $M(x)$ drawn in the assumed positive sense:
 
@@ -58,7 +60,7 @@ $$y(x) = -\frac{P}{EI}\left(\frac{Lx^2}{2} - \frac{x^3}{6}\right) \tag{8}$$
 
 A cubic polynomial in $x$. The third degree comes from a moment that is linear in $x$ (first degree), integrated twice.
 
-![Deflection curve](deflection-curve.png)
+![Deflected shape of a cantilever beam under tip load — result of double integration of EI·y″ = M(x)](deflection-curve.png)
 
 $x = L$ in (8):
 
@@ -70,4 +72,4 @@ The tip deflection is the absolute value of $y(L)$:
 
 $$\boxed{\delta = \frac{PL^3}{3EI}} \tag{10}$$
 
-Assumptions, in the order they entered: plane sections, linear elastic material, small deformations (all three from $EI \cdot y'' = M(x)$, the starting point), moment on the undeformed geometry (1), $EI$ constant along $x$ (2), perfect fixed end — zero rotation (4) and zero displacement (7). If any one fails, (10) does not hold.
+Assumptions, in the order they entered: plane sections, linear elastic material, small deformations (all three from [$EI \cdot y'' = M(x)$](/engineering-tools/series-b/b1-euler-bernoulli/), the starting point), moment on the undeformed geometry (1), $EI$ constant along $x$ (2), perfect fixed end — zero rotation (4) and zero displacement (7). If any one fails, (10) does not hold.

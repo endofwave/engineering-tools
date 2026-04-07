@@ -4,7 +4,7 @@ type: "page"
 # Standard PaperMod parameters
 ---
 
-![Collaborate and Inquire](engineering-contact.png)
+![Contact form for Engineering Tools — questions, corrections and suggestions](engineering-contact.png)
 
 {{< rawhtml >}}
 <style>

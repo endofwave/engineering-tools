@@ -1,10 +1,12 @@
 ---
 title: "Series B — Open Formula"
-description: "Complete derivations of recurring structural formulas, from first principles to final result"
+description: "Complete step-by-step derivations of classical structural mechanics formulas, from first physical principles to final closed-form result."
+summary: "Complete step-by-step derivations of classical structural mechanics formulas, from first physical principles to final closed-form result."
+tags: ["structural mechanics", "formula derivation", "Euler-Bernoulli", "buckling", "mechanics of materials"]
 ---
 ## Open Formula
 
-![Chain of equations leading to the final boxed formula](cover_seriesB.jpg)
+![Derivation chain — from first physical principles to the final boxed closed-form formula](cover_seriesB.jpg)
 
 Structural formulas are used daily and derived rarely. This series opens them up.
 

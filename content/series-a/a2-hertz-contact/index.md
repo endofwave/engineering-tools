@@ -1,11 +1,11 @@
 ---
-title: "Hertz Contact Stress in Deep Groove Ball Bearings"
+title: "Hertz Contact Stress in Deep Groove Ball Bearings — Analytical Pipeline"
 date: 2025-03-19
 lastmod: 2025-03-19
 draft: false
-description: "5-node analytical pipeline for Hertzian contact stress in ball bearings, with Colab notebook and numerical verification."
-summary: "Given a bearing and a load → maximum subsurface shear stress → engineering verdict. Pipeline, notebook, and verification case for bearing 6206."
-tags: ["contact mechanics", "bearings", "Hertz", "Python"]
+description: "5-node closed-form pipeline for maximum contact pressure and subsurface shear stress in deep groove ball bearings. Hamrock-Brewe approximation, Python notebook, verified on bearing 6206."
+summary: "Given a bearing and a radial load → maximum subsurface shear stress → engineering verdict. Pipeline, notebook, and verification case for bearing 6206."
+tags: ["contact mechanics", "Hertz contact", "ball bearings", "DGBB", "subsurface shear stress", "Hamrock-Brewe", "Python"]
 categories: ["tools"]
 math: true
 ShowToc: true
@@ -13,7 +13,7 @@ TocOpen: true
 weight: 1
 cover:
   image: "hertz_contact_6206.png"
-  alt: "Hertz contact pressure distribution"
+  alt: "Hertz contact pressure distribution under a ball bearing inner ring — bearing 6206 at 1000 N radial load"
   caption: "Contact pressure and subsurface shear stress — bearing 6206 at 1000 N"
   relative: false
 ---
@@ -61,7 +61,7 @@ The pipeline takes bearing geometry, material properties, and radial load as inp
 It outputs the maximum subsurface shear stress $\tau_{\max}$ and its depth $z_{cr}$,
 which govern fatigue initiation at the ball–raceway contact.
 
-![Hertz Contact Stress Pipeline](hertz_pipeline_infographic.png)
+![5-node Hertz contact stress pipeline from bearing geometry to subsurface shear stress](hertz_pipeline_infographic.png)
 
 The pipeline is **linear and non-iterative**. The only potentially iterative step
 (elliptic integrals in Node 2b) is handled by the Hamrock-Brewe closed-form
@@ -344,13 +344,13 @@ Numerical scan confirms $\tau_{\max} = 518.9$ MPa at $\zeta = 0.786$ (deviation 
 (1728 MPa peak, ellipse ≈ 2.7 × 0.22 mm). Right: subsurface shear stress
 profile showing the maximum at $z_{cr} = 88$ μm.
 
-![Contact pressure and subsurface shear stress](hertz_contact_6206.png)
+![Hertz contact pressure distribution and subsurface shear stress — bearing 6206 at 1000 N radial load](hertz_contact_6206.png)
 
 **Figure 2** — Maximum contact pressure $p_0$ and subsurface shear stress
 $\tau_{\max}$ vs radial load. Horizontal lines: shear yield and fatigue limits.
 Vertical lines: current load (1000 N) and static rating ( $C_0 = 11.2$ kN).
 
-![Parametric: stress vs radial load](hertz_parametric_6206.png)
+![Parametric plot of maximum contact pressure vs radial load for bearing 6206](hertz_parametric_6206.png)
 
 ---
 

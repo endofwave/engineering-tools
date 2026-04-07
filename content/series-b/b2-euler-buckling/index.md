@@ -1,13 +1,16 @@
 ---
-title: "Where Pcr = π²EI/L² comes from"
+title: "Derivation of the Euler Critical Buckling Load Pcr = π²EI/L²"
 date: 2026-03-17
 math: true
+description: "Step-by-step derivation of the Euler buckling formula from equilibrium on the deflected geometry, boundary conditions, and eigenvalue problem. Pinned-pinned column, all assumptions explicit."
+summary: "From equilibrium on the deflected geometry to the Euler critical load Pcr = π²EI/L², step by step."
 tags:
   - structural-mechanics
   - euler-buckling
+  - column buckling
+  - critical load
   - stability
   - derivation
-summary: "From equilibrium on the deflected geometry to the Euler critical load, step by step."
 ---
 
 ## Where $P_{cr} = \dfrac{\pi^2 EI}{L^2}$ comes from
@@ -16,7 +19,7 @@ Straight column, centred axial load, pinned at both ends. The goal is the value 
 
 Axis $x$ along the column, origin at the lower pin, $x = L$ at the upper pin. Axis $y$ perpendicular, in the plane of buckling. $P > 0$ denotes compression.
 
-![Column pinned setup](column-pinned-setup.png)
+![Pinned-pinned column under axial compressive load — equilibrium setup for Euler buckling derivation](column-pinned-setup.png)
 
 The column is in equilibrium in the straight configuration under any $P$. The question is whether a $P$ exists for which a slightly deflected configuration $y(x) \neq 0$ is also an equilibrium.
 
@@ -64,7 +67,7 @@ $$y(0) = 0 \tag{7}$$
 
 $$y(x) = A \sin(kx) \tag{8}$$
 
-![Buckling mode shape](buckling-mode-shape.png)
+![First buckling mode shape of a pinned-pinned column — sinusoidal deflection at critical load](buckling-mode-shape.png)
 
 Boundary condition at the upper pin — zero displacement:
 

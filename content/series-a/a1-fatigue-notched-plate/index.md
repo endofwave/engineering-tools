@@ -1,17 +1,19 @@
 ---
-title: "Fatigue in Notched Plates — Worked Example"
+title: "Fatigue Life of Notched Plates — Analytical Pipeline (Hazizi 2023)"
 date: 2026-03-19
 math: true
+description: "10-node closed-form pipeline for fatigue life prediction in plates with semicircular notches, based on Hazizi et al. (2023). Includes Kt correction, mean stress, and Python notebook with FEM verification via PrePoMax."
+summary: "10-node analytical pipeline for fatigue life of plates with semicircular notches, with corrections to Hazizi et al. (2023)."
 tags:
   - fatigue
   - notch
   - stress-concentration
+  - fatigue-life-prediction
+  - S-N curve
   - worked-example
   - python
   - prepomax
   - calculix
-  - onshape
-summary: "10-node analytical pipeline for fatigue life of plates with semicircular notches, with corrections to Hazizi et al. (2023)."
 ---
 
 ## Fatigue in Notched Plates — Worked Example
@@ -557,7 +559,7 @@ Tab Results → STRESS → **S11**.
 |---|---|---|---|
 | $\sigma_{max}$ S11 | $395.914$ MPa | $395.8$ MPa | $0.03\%$ |
 
-![PrePoMax stress result at the notch](prepomax-stress-result.png)
+![Von Mises stress distribution at semicircular notch — PrePoMax FEM verification of fatigue pipeline](prepomax-stress-result.png)
 
 The deviation is negligible. The model is validated.
 

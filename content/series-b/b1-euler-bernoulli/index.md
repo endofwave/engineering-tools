@@ -1,13 +1,15 @@
 ---
-title: "Derivation of EI · y″ = M(x)"
+title: "Derivation of the Euler-Bernoulli Beam Equation EI·y″ = M(x)"
 date: 2026-03-17
 math: true
+description: "Step-by-step derivation of the moment-curvature relation EI·y″ = M(x), from plane sections assumption to the Euler-Bernoulli bending equation. All hypotheses stated explicitly."
+summary: "From plane sections to the moment–curvature relation EI·y″ = M(x), step by step."
 tags:
   - structural-mechanics
   - euler-bernoulli
-  - bending
+  - beam bending
+  - moment-curvature
   - derivation
-summary: "From plane sections to the moment–curvature relation, step by step."
 ---
 
 ## Derivation of EI · y″ = M(x)
@@ -56,11 +58,11 @@ The cube of $h$ comes from integrating $y^2$ over a domain of width $h$.
 
 $$\frac{1}{\rho} = \frac{M}{EI} \tag{7}$$
 
-The exact curvature of a plane curve $y(x)$:
+The exact curvature of a plane curve $y(x)$ ([full derivation](/engineering-tools/series-b/b3-curvature/)):
 
 $$\frac{1}{\rho} = \frac{y''}{\left(1 + y'^2\right)^{3/2}} \tag{8}$$
 
-![Curvature geometry](curvature-geometry.png)
+![Geometric definition of beam curvature from arc length and centre of curvature](curvature-geometry.png)
 
 Where it comes from: the tangent angle is $\theta = \arctan(y')$, giving $d\theta/dx = y''/(1+y'^2)$. The arc length element is $ds = \sqrt{1+y'^2}\,dx$. Curvature is $d\theta/ds = (d\theta/dx)/(ds/dx)$, which yields (8).
 

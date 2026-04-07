@@ -1,9 +1,11 @@
 ---
 title: "Series A — Papers → Tools"
-description: "Calculation pipelines extracted from technical papers, with Python notebooks"
+description: "Closed-form calculation pipelines extracted from peer-reviewed papers, with Python notebooks and step-by-step numerical verification cases."
+summary: "Closed-form calculation pipelines extracted from peer-reviewed papers, with Python notebooks and step-by-step numerical verification cases."
+tags: ["analytical pipeline", "Python notebook", "mechanical engineering", "peer-reviewed", "closed-form"]
 ---
 ## Papers → Tools
-![Paper transformed into a calculation pipeline](cover_seriesA.jpg)
+![Technical paper transformed into a step-by-step closed-form calculation pipeline](cover_seriesA.jpg)
 
 Technical papers publish methods. This series makes them usable.
 

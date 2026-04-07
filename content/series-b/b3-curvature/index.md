@@ -1,13 +1,15 @@
 ---
-title: "Curvature of a plane curve"
+title: "Derivation of the Curvature Formula κ = y″/(1+y′²)^(3/2)"
 date: 2026-03-18
 math: true
+description: "Step-by-step derivation of the curvature of a plane curve from its geometric definition, with the small-angle simplification to κ ≈ y″ used in beam theory."
+summary: "From the geometric definition of curvature to κ = y″/(1+y′²)^(3/2), and when it reduces to y″."
 tags:
   - differential-geometry
   - curvature
   - euler-bernoulli
+  - small-angle approximation
   - derivation
-summary: "From the geometric definition of curvature to κ = y″/(1+y′²)^(3/2), and when it reduces to y″."
 ---
 
 ## Curvature of a plane curve: $\kappa = \dfrac{y''}{(1 + y'^2)^{3/2}}$
@@ -22,7 +24,7 @@ $$\kappa = \frac{d\theta}{ds} \tag{1}$$
 
 This is a definition, not an approximation. It is equivalent to $\kappa = 1/R$, where $R$ is the radius of the osculating circle. (1) holds for any smooth plane curve described by any parametrisation; what follows specialises it to the Cartesian form $y(x)$.
 
-![Geometry of curvature](curvature-geometry.png)
+![Geometric definition of curvature of a plane curve — arc length, tangent angle, and radius of curvature](curvature-geometry.png)
 
 Since $y(x)$ is single-valued, the tangent angle at any point is
 
@@ -72,4 +74,4 @@ To see how fast the approximation degrades: at $y' = 0.1$, the denominator is $(
 
 Definitions and restrictions, in the order they entered the pipeline: smooth curve $y(x)$ with finite slope (2), geometric definition of curvature as $d\theta/ds$ (1), Cartesian arc-length element (4), small-slope assumption $y'^2 \ll 1$ (6). The exact formula (5) requires only the first three. The linearised formula (7) requires all four. If (6) fails, (7) is invalid but (5) still holds.
 
-This is the $\kappa$ that, multiplied by $EI$, gives the bending moment in the Euler–Bernoulli derivations.
+This is the $\kappa$ that, multiplied by $EI$, gives the bending moment in the [Euler–Bernoulli derivations](/engineering-tools/series-b/b1-euler-bernoulli/).

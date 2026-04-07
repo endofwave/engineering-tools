@@ -1,11 +1,13 @@
 ---
-title: "About"
+title: "About — Engineering Tools"
 layout: "single"
 url: /about/
+description: "Engineering Tools publishes transparent calculation pipelines extracted from peer-reviewed papers, with Python notebooks and full intermediate values. By G. Ganz, mechanical engineer."
 summary: "About this project and its author."
+tags: ["about", "mechanical engineering", "open source"]
 cover:
   image: "cover.png"
-  alt: "Engineer's desk with notebook, laptop and tools"
+  alt: "Engineer's desk with technical notebooks and calculation tools"
   hidden: false
 ---
 

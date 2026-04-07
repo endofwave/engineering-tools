@@ -1,9 +1,17 @@
 ---
-title: "Penetration Depth of Concrete Target"
+title: "Concrete Penetration Depth — Analytical Pipeline (Li & Chen 2003)"
 date: 2026-04-02
-description: "Closed-form penetration depth pipeline for rigid projectiles impacting semi-infinite concrete targets, based on Li & Chen (2003)."
-tags: ["penetration", "impact engineering", "concrete", "cavity expansion", "dimensional analysis", "ballistics"]
 math: true
+description: "Closed-form model for rigid projectile penetration into semi-infinite concrete targets, based on Li & Chen (2003). Cavity expansion theory, 7-node pipeline, Python notebook verified against Forrestal et al. (1994) test data."
+summary: "From projectile geometry and impact velocity to penetration depth — dimensionless formulation, regime selection (shallow/deep), and numerical verification against 82 test points."
+tags:
+  - penetration mechanics
+  - concrete
+  - impact engineering
+  - cavity expansion
+  - projectile
+  - rigid projectile
+  - python
 cover:
   image: "SpectrumGeometricEfficiency.jpg"
   alt: "N*: The Spectrum of Geometric Efficiency"
@@ -21,7 +29,7 @@ The outcome is two closed-form formulae — Eq. (15a) for shallow penetration, E
 ---
 
 ## Quick Example
-![Projectile, target and penetration quantities](ReferenceData_v4.jpg)
+![Reference diagram — rigid projectile geometry, semi-infinite concrete target, and penetration depth X](concrete-penetration-reference-geometry.jpg)
 
 4340-steel ogive projectile, CRH = 2, impacting 35 MPa concrete at 277 m/s.
 Data: Forrestal et al. (1994), Table 3, shot 14.
@@ -57,7 +65,7 @@ The 26.9 mm ogive projectile at 277 m/s penetrates 167 mm into 35 MPa concrete �
 
 ## Pipeline Overview
 
-![A4 pipeline block diagram](A4_SchemaPipeline.jpg)
+![Block diagram of the concrete penetration depth pipeline — 7 nodes from nose geometry to depth X](concrete-penetration-pipeline-diagram.jpg)
 
 The pipeline is sequential with one bifurcation. Nodes 0–3 are always executed. Node 4 selects the depth formula based on whether $I$ exceeds the crater threshold $\pi k/4$. Node 5a (shallow) or 5b (deep) computes the dimensionless depth; Node 6 converts to metres or millimetres.
 
@@ -164,7 +172,7 @@ $$S_{\text{simpl}} = 72.0 \; f_c^{-0.5}$$
 
 The simplified form makes $I$ proportional to $f_c^{-1/2}$, aligning with the $f_c$ dependence in NDRC, Hughes and Chang and enabling direct comparison. For $f_c > 30\,\text{MPa}$ the two correlations are practically equivalent.
 
-![S vs fc — empirical correlations](S_vs_fc.png)
+![Target resistance constant S vs compressive strength fc — Forrestal (1994) and Li & Chen (2003) correlations](S_vs_fc.png)
 
 | $f_c$ (MPa) | $S_{\text{orig}}$ | $S_{\text{simpl}}$ | $S$ (paper) |
 |:-----------:|:-----------------:|:------------------:|:-----------:|
@@ -358,11 +366,11 @@ Test: 173 mm. Error: 3.4%. Semi-infinite check: $3X = 502\,\text{mm}$ minimum ta
 
 ## Figures
 
-![Dimensionless penetration depth vs impact function I — parametric curves for N = 20 to 1500 (reproduces Fig. 3 of the paper)](Xd_vs_I.png)
+![Dimensionless penetration depth vs impact function I — parametric curves for N = 20 to 1500 (reproduces Fig. 3 of the paper)](penetration-depth-vs-impact-function.png)
 
 For fixed $N$, $X/d$ grows logarithmically with $I$ in the deep regime. The shallow-to-deep transition (knee of each curve) shifts with $k$ and $N$. The current case is marked in red.
 
-![Dimensionless penetration depth vs geometry function N — parametric curves for I = 10 to 200 (reproduces Fig. 4 of the paper)](Xd_vs_N.png)
+![Dimensionless penetration depth vs geometry function N — parametric curves for I = 10 to 200 (reproduces Fig. 4 of the paper)](penetration-depth-vs-geometry-function.png)
 
 For fixed $I$, deeper penetration results from a heavier, sharper projectile (large $N$). The sensitivity to $N$ decreases as $I/N \to 0$ — for shot 14 ($I/N = 0.067$) geometry contributes marginally and $X/d$ is driven almost entirely by $I$.
 

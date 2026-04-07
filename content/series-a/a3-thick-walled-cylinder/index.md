@@ -1,9 +1,17 @@
 ---
-title: "Thick-Walled Cylinder Stress Analysis"
-date: 2026-03-25
-description: "Stress analysis pipeline for n coaxial isotropic cylinders with interference fit and rotation, based on Croccolo & Vincenzi (2009)."
-tags: ["thick-walled cylinder", "interference fit", "Lamé", "shaft-hub coupling", "stress analysis"]
+title: "Thick-Walled Cylinder Stress Analysis — Analytical Pipeline (Croccolo 2009)"
+date: 2026-03-19
 math: true
+description: "Closed-form Lamé equations for radial and hoop stress in thick-walled cylinders under internal pressure, based on Croccolo & Vincenzi (2009). Python notebook with interference fit verification case."
+summary: "From internal pressure and geometry to radial/hoop stress distribution — Lamé equations, pipeline, notebook, and numerical verification."
+tags:
+  - thick-walled cylinder
+  - Lamé equations
+  - hoop stress
+  - pressure vessel
+  - interference fit
+  - structural mechanics
+  - python
 ---
 The classical Lamé equations handle a single thick-walled cylinder under internal and external pressure. Real shaft–hub assemblies are rarely that simple: multiple coaxial rings of different materials, interference fits at each interface, and a rotating load case that adds centrifugal body forces to the stress field. Croccolo & Vincenzi (2009) derived a closed-form analytical solution that covers exactly this configuration — nn
 n isotropic coaxial cylinders with arbitrary interference and rotation — and validated it against finite element analysis to within 2% on all stress components.
@@ -33,7 +41,7 @@ except element 3 inner surface ($\sigma_{VM} = 537.7\,\text{MPa}$) which exceeds
 **redesign needed.**
 
 **Pipeline summary:**
-![a3_pipeline_numerical](a3_pipeline_numerical.jpg)
+![Numerical verification of thick-walled cylinder stress pipeline — node-by-node computed values](thick-walled-cylinder-pipeline-numerical.jpg)
 
 | Node | Operation | Input | Output |
 |:----:|:----------|:------|:-------|
@@ -49,7 +57,7 @@ except element 3 inner surface ($\sigma_{VM} = 537.7\,\text{MPa}$) which exceeds
 
 ## Pipeline Overview
 
-![Thick-Walled Cylinder Stress Pipeline](a3_pipeline_overview.jpg)
+![Block diagram of the thick-walled cylinder stress analysis pipeline — Lamé equations, 6 nodes](thick-walled-cylinder-pipeline-overview.jpg)
 
 The pipeline solves a tridiagonal compatibility system (one equation per interface)
 reduced to bidiagonal form by the forward sweep (Node 4) and resolved back-to-front (Node 5).
