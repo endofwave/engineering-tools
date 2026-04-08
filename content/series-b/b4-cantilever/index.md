@@ -10,6 +10,7 @@ tags:
   - beam deflection
   - double integration
   - derivation
+weight: 4
 cover:
   image: "CantileverBeamDeflection.png"
   alt: "Cantilever Beam Deflection - Infographics"

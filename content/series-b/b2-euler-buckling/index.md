@@ -11,6 +11,7 @@ tags:
   - critical load
   - stability
   - derivation
+weight: 2
 cover:
   image: "EulerColumnBuckling.png"
   alt: "Euler Column Buckling - Infographics"

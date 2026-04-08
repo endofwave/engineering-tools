@@ -10,6 +10,7 @@ tags:
   - beam bending
   - moment-curvature
   - derivation
+weight: 1
 cover:
   image: "Euler-BernoulliBeam.png"
   alt: "Euler-Bernoulli Beam - Infographics"

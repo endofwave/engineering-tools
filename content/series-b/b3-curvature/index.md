@@ -10,6 +10,7 @@ tags:
   - euler-bernoulli
   - small-angle approximation
   - derivation
+weight: 3
 cover:
   image: "DerivationBeamCurvature.jpg"
   alt: "Derivation of Beam Curvature - Infographics"
