@@ -11,6 +11,10 @@ tags:
   - critical load
   - stability
   - derivation
+cover:
+  image: "EulerColumnBuckling.png"
+  alt: "Euler Column Buckling - Infographics"
+  relative: true
 ---
 
 ## Where $P_{cr} = \dfrac{\pi^2 EI}{L^2}$ comes from

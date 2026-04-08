@@ -10,6 +10,10 @@ tags:
   - beam deflection
   - double integration
   - derivation
+cover:
+  image: "CantileverBeamDeflection.png"
+  alt: "Cantilever Beam Deflection - Infographics"
+  relative: true
 ---
 
 ## Where $\delta = \dfrac{PL^3}{3EI}$ comes from

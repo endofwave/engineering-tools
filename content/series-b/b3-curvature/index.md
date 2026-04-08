@@ -10,6 +10,10 @@ tags:
   - euler-bernoulli
   - small-angle approximation
   - derivation
+cover:
+  image: "DerivationBeamCurvature.jpg"
+  alt: "Derivation of Beam Curvature - Infographics"
+  relative: true
 ---
 
 ## Curvature of a plane curve: $\kappa = \dfrac{y''}{(1 + y'^2)^{3/2}}$

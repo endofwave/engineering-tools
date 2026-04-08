@@ -10,6 +10,10 @@ tags:
   - beam bending
   - moment-curvature
   - derivation
+cover:
+  image: "Euler-BernoulliBeam.png"
+  alt: "Euler-Bernoulli Beam - Infographics"
+  relative: true
 ---
 
 ## Derivation of EI · y″ = M(x)
