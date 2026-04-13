@@ -1,7 +1,7 @@
 baseURL: "https://eng-tools.dev/"
 languageCode: "en"
 title: "Engineering Tools"
-theme: "PaperMod"
+theme: "PaperMod" 
 
 # ── Build ────────────────────────────────────────────────────────
 enableRobotsTXT: true
