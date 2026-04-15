@@ -2,7 +2,7 @@
 
 Analytical calculation pipelines extracted from peer-reviewed papers and complete derivations of classical structural formulas — each with declared inputs, explicit intermediate steps, and a numerical verification case.
 
-**Live site:** [endofwave.github.io/engineering-tools](https://endofwave.github.io/engineering-tools/)
+**Live site:** [engineering-tools](https://eng-tools.dev)
 
 No black boxes. Every formula is shown. Every number is traceable.
 
