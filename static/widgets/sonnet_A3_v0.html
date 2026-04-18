@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A3 — Interference Fit Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background-color: #0a0e17;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 39px, #111d33 39px, #111d33 40px),
+    repeating-linear-gradient(90deg, transparent, transparent 39px, #111d33 39px, #111d33 40px);
+  font-family: 'IBM Plex Sans', sans-serif;
+  color: #e2e8f0;
+  min-height: 100vh;
+}
+#root {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { opacity: 0.4; }
+input[type=number]:focus { outline: 2px solid #22d3ee; outline-offset: 1px; }
+button { outline: none; }
+@media (max-width: 820px) {
+  .g2 { grid-template-columns: 1fr !important; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef, useEffect, useMemo, useCallback } = React;
+
+/* ═══════════════════════════════════════════════════════════
+   1. COMPUTE — pure function, solid shaft only (d_A = 0)
+   ═══════════════════════════════════════════════════════════ */
+function compute(inp) {
+  const { DC, dM, E_A, nu_A, E_M, nu_M, sigma_y, mode, delta, pC_input } = inp;
+
+  if (!DC || !dM || DC <= 0 || dM <= DC || sigma_y <= 0) return null;
+
+  const r_C = DC / 2;
+  const r_o = dM / 2;
+  const Q_H = dM / DC;
+  const Q_H2 = Q_H * Q_H;
+
+  let p_C;
+  if (mode === 'pC') {
+    if (!pC_input || pC_input <= 0) return null;
+    p_C = pC_input;
+  } else {
+    if (!delta || delta <= 0 || !E_A || E_A <= 0 || !E_M || E_M <= 0) return null;
+    // Solid shaft: Q_S = 0 → shaft term = (1/E_A)·(1 − ν_A)
+    const hub_term  = (1 / E_M) * ((1 + Q_H2) / (Q_H2 - 1) + nu_M);
+    const shft_term = (1 / E_A) * (1 - nu_A);
+    p_C = delta / (DC * (hub_term + shft_term));
+  }
+
+  if (!p_C || p_C <= 0 || !isFinite(p_C)) return null;
+
+  // ── Hub inner surface (critical point) ──
+  const sr_i = -p_C;
+  const st_i =  p_C * (1 + Q_H2) / (Q_H2 - 1);
+  // σ_VM at inner: √(p_C² + σ_θ² + p_C·σ_θ)  [from σ_r = −p_C substitution]
+  const vm_i = Math.sqrt(sr_i*sr_i + st_i*st_i - sr_i*st_i);
+
+  const sig_Tr  = st_i - sr_i;                      // Tresca = σ_θ − σ_r = σ_θ + p_C
+  const ns_Tr   = sigma_y / sig_Tr;
+  const pC_max  = sigma_y * (Q_H2 - 1) / (2 * Q_H2);
+
+  // ── Stress profiles (N points per region) ──
+  const N = 60;
+
+  // Shaft (solid): σ_r = σ_θ = −p_C, σ_VM = p_C (uniform)
+  const shaft_pts = Array.from({ length: N + 1 }, (_, i) => ({
+    r: r_C * i / N,
+    sr: -p_C,
+    st: -p_C,
+    vm:  p_C
+  }));
+
+  // Hub: Lamé equations
+  const hub_pts = Array.from({ length: N + 1 }, (_, i) => {
+    const r  = r_C + (r_o - r_C) * i / N;
+    const sr = p_C / (Q_H2 - 1) * (1 - r_o*r_o / (r*r));
+    const st = p_C / (Q_H2 - 1) * (1 + r_o*r_o / (r*r));
+    const vm = Math.sqrt(sr*sr + st*st - sr*st);
+    return { r, sr, st, vm };
+  });
+
+  return {
+    Q_H, Q_H2, p_C, r_C, r_o,
+    sr_i, st_i, vm_i, sig_Tr, ns_Tr, pC_max,
+    shaft_pts, hub_pts
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   2. CANVAS CHART
+   ═══════════════════════════════════════════════════════════ */
+function drawChart(canvas, res, sy) {
+  if (!canvas || !res) return;
+  const dpr  = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+
+  canvas.width  = Math.round(rect.width  * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const W = rect.width, H = rect.height;
+  const p = { t: 30, r: 16, b: 44, l: 60 };
+  const pw = W - p.l - p.r, ph = H - p.t - p.b;
+  if (pw <= 0 || ph <= 0) return;
+
+  // Background
+  ctx.fillStyle = '#0d1321';
+  ctx.fillRect(0, 0, W, H);
+
+  // Y range
+  const all = [...res.shaft_pts, ...res.hub_pts].flatMap(pt => [pt.sr, pt.st, pt.vm]);
+  all.push(sy);
+  const yRaw = [Math.min(...all), Math.max(...all)];
+  const ySpan = yRaw[1] - yRaw[0] || 10;
+  const yMin = yRaw[0] - ySpan * 0.13;
+  const yMax = yRaw[1] + ySpan * 0.13;
+
+  const xs = r => p.l + (r / res.r_o) * pw;
+  const ys = s => p.t + (1 - (s - yMin) / (yMax - yMin)) * ph;
+
+  // Shaft region shade
+  ctx.fillStyle = 'rgba(30,41,59,0.28)';
+  ctx.fillRect(p.l, p.t, xs(res.r_C) - p.l, ph);
+
+  // Grid Y
+  const nY = 5;
+  for (let i = 0; i <= nY; i++) {
+    const v = yMin + (yMax - yMin) * i / nY;
+    const y = ys(v);
+    ctx.strokeStyle = '#1b2844'; ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(p.l, y); ctx.lineTo(p.l + pw, y); ctx.stroke();
+    ctx.fillStyle = '#475569';
+    ctx.font = "10px 'IBM Plex Sans'";
+    ctx.textAlign = 'right';
+    ctx.fillText(v.toFixed(0), p.l - 5, y + 3);
+  }
+  // Grid X
+  const nX = 5;
+  for (let i = 0; i <= nX; i++) {
+    const r = res.r_o * i / nX;
+    const x = xs(r);
+    ctx.strokeStyle = '#1b2844'; ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(x, p.t); ctx.lineTo(x, p.t + ph); ctx.stroke();
+    ctx.fillStyle = '#475569';
+    ctx.font = "10px 'IBM Plex Sans'";
+    ctx.textAlign = 'center';
+    ctx.fillText(r.toFixed(1), x, p.t + ph + 16);
+  }
+
+  // Border
+  ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 1;
+  ctx.strokeRect(p.l, p.t, pw, ph);
+
+  // Interface marker
+  ctx.strokeStyle = '#2d4a6a'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+  ctx.beginPath(); ctx.moveTo(xs(res.r_C), p.t); ctx.lineTo(xs(res.r_C), p.t + ph); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Zero line
+  if (yMin < 0 && yMax > 0) {
+    ctx.strokeStyle = '#1e3a5f'; ctx.lineWidth = 0.75;
+    ctx.beginPath(); ctx.moveTo(p.l, ys(0)); ctx.lineTo(p.l + pw, ys(0)); ctx.stroke();
+  }
+
+  // σ_y line
+  if (sy > yMin && sy < yMax) {
+    ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1; ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(p.l, ys(sy)); ctx.lineTo(p.l + pw, ys(sy)); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#ef4444';
+    ctx.font = "9px 'JetBrains Mono'";
+    ctx.textAlign = 'left';
+    ctx.fillText('σ_y', p.l + 5, ys(sy) - 4);
+  }
+
+  // Draw line
+  const line = (pts, color, dash, lw) => {
+    if (!pts.length) return;
+    ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.setLineDash(dash);
+    ctx.beginPath();
+    pts.forEach((pt, i) => i === 0 ? ctx.moveTo(xs(pt.r), ys(pt.s)) : ctx.lineTo(xs(pt.r), ys(pt.s)));
+    ctx.stroke(); ctx.setLineDash([]);
+  };
+
+  const CYAN  = '#22d3ee';
+  const AMBER = '#f59e0b';
+
+  // Shaft: σ_r = σ_θ = -p_C (dashed cyan), σ_VM = p_C (amber)
+  line(res.shaft_pts.map(pt => ({ r: pt.r, s: pt.sr })), CYAN,  [4, 3], 1.5);
+  line(res.shaft_pts.map(pt => ({ r: pt.r, s: pt.vm })), AMBER, [],     2.0);
+
+  // Hub: σ_r (dashed cyan), σ_θ (solid cyan), σ_VM (amber thick)
+  line(res.hub_pts.map(pt => ({ r: pt.r, s: pt.sr })), CYAN,  [4, 3], 1.5);
+  line(res.hub_pts.map(pt => ({ r: pt.r, s: pt.st })), CYAN,  [],     1.5);
+  line(res.hub_pts.map(pt => ({ r: pt.r, s: pt.vm })), AMBER, [],     2.5);
+
+  // Region labels
+  ctx.fillStyle = '#334155'; ctx.font = "9px 'IBM Plex Sans'"; ctx.textAlign = 'center';
+  ctx.fillText('SHAFT', xs(res.r_C / 2), p.t + 13);
+  ctx.fillText('HUB',   xs((res.r_C + res.r_o) / 2), p.t + 13);
+
+  // Axis labels
+  ctx.fillStyle = '#64748b'; ctx.font = "10px 'IBM Plex Sans'";
+  ctx.textAlign = 'center';
+  ctx.fillText('r  [mm]', p.l + pw / 2, H - 5);
+  ctx.save();
+  ctx.translate(14, p.t + ph / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('σ  [MPa]', 0, 0);
+  ctx.restore();
+
+  // Legend
+  const lgX = p.l + pw - 80, lgY = p.t + 10;
+  [
+    { c: CYAN,    d: [4,3], lw: 1.5, l: 'σ_r' },
+    { c: CYAN,    d: [],    lw: 1.5, l: 'σ_θ'  },
+    { c: AMBER,   d: [],    lw: 2.5, l: 'σ_VM' },
+  ].forEach(({ c, d, lw, l }, i) => {
+    const y = lgY + i * 17;
+    ctx.strokeStyle = c; ctx.lineWidth = lw; ctx.setLineDash(d);
+    ctx.beginPath(); ctx.moveTo(lgX, y + 4); ctx.lineTo(lgX + 16, y + 4); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#94a3b8'; ctx.font = "9px 'JetBrains Mono'"; ctx.textAlign = 'left';
+    ctx.fillText(l, lgX + 20, y + 8);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   3. SVG CROSS-SECTION
+   ═══════════════════════════════════════════════════════════ */
+function CrossSection({ res, DC, dM }) {
+  if (!res) {
+    return (
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'center',
+                    height:200, color:'#1e293b', fontFamily:'IBM Plex Sans', fontSize:12 }}>
+        Enter valid geometry
+      </div>
+    );
+  }
+  const VW = 280, VH = 220;
+  const cx = 28, cy = VH / 2;
+  const MAX_R = 82;
+  const sc = MAX_R / res.r_o;
+  const rc = res.r_C * sc;
+  const ro = res.r_o * sc;
+
+  // Right-half paths
+  // Ring: outer cw arc → L to inner → inner ccw arc → Z
+  const hubPath  = `M ${cx} ${cy-ro} A ${ro} ${ro} 0 0 1 ${cx} ${cy+ro} L ${cx} ${cy+rc} A ${rc} ${rc} 0 0 0 ${cx} ${cy-rc} Z`;
+  const shftPath = `M ${cx} ${cy-rc} A ${rc} ${rc} 0 0 1 ${cx} ${cy+rc} Z`;
+
+  // Pressure arrows (pointing inward toward interface)
+  const aY = [cy - rc * 0.42, cy + rc * 0.42];
+  const aTip = cx + rc + 2, aStart = cx + rc + 22;
+
+  return (
+    <svg viewBox={`0 0 ${VW} ${VH}`} style={{ width:'100%', height:'100%', maxHeight:210 }}>
+      <defs>
+        <marker id="arrP" markerWidth="5" markerHeight="5" refX="5" refY="2.5" orient="auto">
+          <polygon points="0,0 5,2.5 0,5" fill="#f59e0b"/>
+        </marker>
+      </defs>
+
+      {/* Center-line */}
+      <line x1={cx} y1={cy-ro-14} x2={cx} y2={cy+ro+14}
+            stroke="#1e3a5f" strokeWidth="1" strokeDasharray="5,3"/>
+
+      {/* Hub ring */}
+      <path d={hubPath} fill="#22d3ee" fillOpacity="0.12" stroke="#22d3ee" strokeWidth="1.5"/>
+
+      {/* Solid shaft */}
+      <path d={shftPath} fill="#1e3a5f" stroke="#475569" strokeWidth="1"/>
+
+      {/* Pressure arrows */}
+      {aY.map((y, i) => (
+        <line key={i} x1={aStart} y1={y} x2={aTip} y2={y}
+              stroke="#f59e0b" strokeWidth="1.5" markerEnd="url(#arrP)"/>
+      ))}
+      <text x={aStart + 4} y={cy - 2}
+            fill="#f59e0b" fontSize="9" fontFamily="JetBrains Mono"
+            textAnchor="start" dominantBaseline="middle">
+        p_C = {res.p_C.toFixed(1)} MPa
+      </text>
+
+      {/* Dimension r_o */}
+      <line x1={cx+2} y1={cy-ro-8} x2={cx+ro} y2={cy-ro-8} stroke="#2d4a6a" strokeWidth="0.75"/>
+      <text x={cx+ro/2} y={cy-ro-14} fill="#475569" fontSize="8.5" fontFamily="JetBrains Mono" textAnchor="middle">
+        r_o = {res.r_o.toFixed(0)} mm
+      </text>
+
+      {/* Dimension r_C */}
+      <line x1={cx+2} y1={cy-rc-4} x2={cx+rc} y2={cy-rc-4} stroke="#2d4a6a" strokeWidth="0.75"/>
+      <text x={cx+rc/2} y={cy-rc-9} fill="#334155" fontSize="8.5" fontFamily="JetBrains Mono" textAnchor="middle">
+        r_C = {res.r_C.toFixed(0)} mm
+      </text>
+
+      {/* Labels inside */}
+      <text x={cx+rc/2} y={cy+5} fill="#64748b" fontSize="7.5" fontFamily="IBM Plex Sans" textAnchor="middle">SHAFT</text>
+      <text x={cx+(rc+ro)/2} y={cy+5} fill="#22d3ee" fontSize="7.5" fontFamily="IBM Plex Sans" textAnchor="middle" opacity="0.75">HUB</text>
+    </svg>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   4. SMALL COMPONENTS
+   ═══════════════════════════════════════════════════════════ */
+const AccStep = ({ id, title, open, toggle, children }) => (
+  <div style={{ borderBottom:'1px solid #1a2440' }}>
+    <button onClick={() => toggle(id)} style={{
+      width:'100%', textAlign:'left', padding:'11px 16px',
+      background: open ? '#141f35' : 'transparent',
+      border:'none', cursor:'pointer', color:'#e2e8f0',
+      fontFamily:'JetBrains Mono', fontSize:12,
+      borderLeft: open ? '3px solid #22d3ee' : '3px solid transparent',
+      display:'flex', alignItems:'center', gap:10,
+    }}>
+      <span style={{ color:'#22d3ee', fontSize:13, minWidth:12 }}>{open ? '▼' : '▶'}</span>
+      {title}
+    </button>
+    {open && (
+      <div style={{
+        padding:'12px 20px 16px', background:'#080e1c',
+        fontFamily:'JetBrains Mono', fontSize:11, color:'#94a3b8', lineHeight:2.1
+      }}>
+        {children}
+      </div>
+    )}
+  </div>
+);
+
+const f  = (v, d=2)  => (v === undefined || v === null || !isFinite(v)) ? '—' : (+v).toFixed(d);
+const Cy = ({ c })   => <span style={{ color:'#22d3ee' }}>{c}</span>;
+const Am = ({ c })   => <span style={{ color:'#f59e0b' }}>{c}</span>;
+
+const Field = ({ label, field, unit, step, min, disabled, inputs, upd }) => (
+  <div style={{ display:'flex', alignItems:'center', marginBottom:8, gap:6,
+                opacity: disabled ? 0.38 : 1, transition:'opacity 0.2s' }}>
+    <label style={{ flex:'0 0 152px', fontSize:11, color:'#94a3b8',
+                    fontFamily:'JetBrains Mono', lineHeight:1.35 }}>{label}</label>
+    <input type="number" step={step||'any'} min={min}
+           value={inputs[field]} disabled={!!disabled}
+           onChange={e => upd(field, parseFloat(e.target.value))}
+           style={{
+             width:90, fontSize:12, fontFamily:'JetBrains Mono',
+             background:'#f1f5f9', color:'#0f172a',
+             border:'1px solid #334155', borderRadius:3,
+             padding:'3px 8px', cursor: disabled ? 'not-allowed' : 'text'
+           }}/>
+    {unit && <span style={{ fontSize:10, color:'#475569', fontFamily:'IBM Plex Sans' }}>{unit}</span>}
+  </div>
+);
+
+const TRow = ({ label, v, d, unit, color }) => (
+  <tr>
+    <td style={{ fontSize:11, fontFamily:'JetBrains Mono', color:'#94a3b8',
+                 padding:'5px 8px 5px 0', whiteSpace:'nowrap' }}>{label}</td>
+    <td style={{ fontSize:12, fontFamily:'JetBrains Mono', color: color||'#e2e8f0',
+                 textAlign:'right', padding:'5px 10px', minWidth:72 }}>{f(v, d)}</td>
+    <td style={{ fontSize:11, fontFamily:'IBM Plex Sans', color:'#475569',
+                 padding:'5px 0' }}>{unit}</td>
+  </tr>
+);
+
+/* ═══════════════════════════════════════════════════════════
+   5. APP
+   ═══════════════════════════════════════════════════════════ */
+function App() {
+  const [inp, setInp] = useState({
+    DC: 40, dM: 60,
+    E_A: 206000, nu_A: 0.29,
+    E_M: 206000, nu_M: 0.29,
+    sigma_y: 650,
+    mode: 'pC',
+    delta: 0.05,
+    pC_input: 82,
+  });
+  const [acc, setAcc]   = useState({});
+  const canvasRef        = useRef(null);
+
+  const upd    = useCallback((k, v) => setInp(p => ({ ...p, [k]: v })), []);
+  const togAcc = useCallback((id)   => setAcc(p => ({ ...p, [id]: !p[id] })), []);
+
+  const res = useMemo(() => compute(inp), [inp]);
+  const safe = res ? res.ns_Tr >= 1 : null;
+  const isDelta = inp.mode === 'delta';
+
+  // Chart — ResizeObserver for reliable sizing
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    const ro = new ResizeObserver(() => drawChart(canvasRef.current, res, inp.sigma_y));
+    ro.observe(canvasRef.current);
+    drawChart(canvasRef.current, res, inp.sigma_y);
+    return () => ro.disconnect();
+  }, [res, inp.sigma_y]);
+
+  // ── Styles ──
+  const CARD = { background:'#0f1929', border:'1px solid #1a2440', borderRadius:8 };
+  const SEC  = { fontFamily:'JetBrains Mono', fontSize:10, color:'#22d3ee',
+                 letterSpacing:'0.12em', marginBottom:13 };
+  const BTN  = (active) => ({
+    padding:'5px 13px', borderRadius:3, border:'1px solid',
+    cursor:'pointer', fontFamily:'JetBrains Mono', fontSize:11,
+    background: active ? '#22d3ee' : 'transparent',
+    borderColor: active ? '#22d3ee' : '#2d4a6a',
+    color: active ? '#0a0e17' : '#94a3b8',
+    transition:'all 0.15s',
+  });
+
+  return (
+    <div>
+      {/* ── HEADER ── */}
+      <div style={{ marginBottom:30, paddingBottom:18, borderBottom:'1px solid #1a2440' }}>
+        <div style={{ fontFamily:'JetBrains Mono', fontSize:10, color:'#22d3ee',
+                      letterSpacing:'0.16em', marginBottom:9 }}>
+          ENG-TOOLS.DEV · SERIE A · A3
+        </div>
+        <h1 style={{ fontFamily:'JetBrains Mono', fontSize:21, fontWeight:700,
+                     color:'#e2e8f0', marginBottom:7, letterSpacing:'0.02em' }}>
+          Interference Fit Calculator
+        </h1>
+        <p style={{ fontFamily:'IBM Plex Sans', fontSize:13, color:'#64748b', maxWidth:580 }}>
+          Shaft–hub press fit analysis via Lamé equations (thick-walled cylinder).
+          Solid shaft only. Tresca and Von Mises yield criteria.
+        </p>
+      </div>
+
+      {/* ── FASCIA 1 — INPUT ── */}
+      <div className="g2" style={{ display:'grid', gridTemplateColumns:'1fr 1fr',
+                                   gap:14, marginBottom:14 }}>
+        {/* Left: fields */}
+        <div style={{ ...CARD, padding:22 }}>
+          <div style={SEC}>GEOMETRY</div>
+          <Field label="D_C  contact diameter"   field="DC"    unit="mm"  inputs={inp} upd={upd} min={0.1}/>
+          <Field label="d_M  hub outer diameter" field="dM"    unit="mm"  inputs={inp} upd={upd} min={0.1}/>
+          <div style={{ fontSize:10, color:'#2d4a6a', fontFamily:'JetBrains Mono',
+                        marginBottom:18, marginTop:3 }}>
+            d_A = 0 — solid shaft (fixed)
+          </div>
+
+          <div style={SEC}>MATERIAL</div>
+          <Field label="E_M  hub Young's mod." field="E_M"   unit="MPa" inputs={inp} upd={upd}/>
+          <Field label="ν_M  hub Poisson"      field="nu_M"  step={0.01} inputs={inp} upd={upd}/>
+          {isDelta && <>
+            <Field label="E_A  shaft Young's mod." field="E_A"  unit="MPa" inputs={inp} upd={upd}/>
+            <Field label="ν_A  shaft Poisson"      field="nu_A" step={0.01} inputs={inp} upd={upd}/>
+          </>}
+          <Field label="σ_y  yield (hub)"   field="sigma_y" unit="MPa" inputs={inp} upd={upd}/>
+
+          <div style={{ marginTop:20 }}>
+            <div style={SEC}>LOADING</div>
+            <div style={{ display:'flex', gap:8, marginBottom:12 }}>
+              <button style={BTN(inp.mode==='pC')}    onClick={() => upd('mode','pC')}>
+                p_C — direct
+              </button>
+              <button style={BTN(inp.mode==='delta')} onClick={() => upd('mode','delta')}>
+                δ — interference
+              </button>
+            </div>
+            {isDelta ? (
+              <>
+                <Field label="δ  interference" field="delta"    unit="mm"  step={0.001} min={0} inputs={inp} upd={upd}/>
+                {res && (
+                  <div style={{ fontSize:10, color:'#475569', fontFamily:'JetBrains Mono', marginTop:4 }}>
+                    → p_C = {f(res.p_C, 3)} MPa
+                  </div>
+                )}
+              </>
+            ) : (
+              <Field label="p_C  contact pressure" field="pC_input" unit="MPa" min={0} inputs={inp} upd={upd}/>
+            )}
+          </div>
+
+          {!res && inp.dM <= inp.DC && (
+            <div style={{ marginTop:14, padding:'6px 10px',
+                          background:'rgba(239,68,68,0.08)', border:'1px solid #ef444466',
+                          borderRadius:4, fontSize:11, fontFamily:'JetBrains Mono', color:'#ef4444' }}>
+              d_M must be greater than D_C
+            </div>
+          )}
+        </div>
+
+        {/* Right: SVG */}
+        <div style={{ ...CARD, padding:20, display:'flex', flexDirection:'column',
+                      minHeight:320 }}>
+          <div style={SEC}>CROSS-SECTION  (right half-section)</div>
+          <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <CrossSection res={res} DC={inp.DC} dM={inp.dM}/>
+          </div>
+        </div>
+      </div>
+
+      {/* ── FASCIA 2 — RESULTS ── */}
+      {res && (
+        <div className="g2" style={{ display:'grid', gridTemplateColumns:'1fr 1fr',
+                                     gap:14, marginBottom:14 }}>
+          {/* Chart */}
+          <div style={{ ...CARD, padding:16 }}>
+            <div style={SEC}>STRESS DISTRIBUTION</div>
+            <canvas ref={canvasRef}
+                    style={{ width:'100%', height:278, display:'block' }}/>
+          </div>
+
+          {/* Results table */}
+          <div style={{ ...CARD, padding:22 }}>
+            <div style={SEC}>RESULTS — hub inner surface (critical)</div>
+            <table style={{ width:'100%', borderCollapse:'collapse' }}>
+              <thead>
+                <tr>
+                  {['Quantity','Value','Unit'].map(h => (
+                    <th key={h} style={{
+                      textAlign: h==='Value' ? 'right' : 'left',
+                      fontSize:9, color:'#334155', fontFamily:'JetBrains Mono',
+                      paddingBottom:9, borderBottom:'1px solid #1a2440',
+                      paddingRight: h==='Value' ? 10 : 0
+                    }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <TRow label="Q_H = d_M / D_C"      v={res.Q_H}     d={4} unit="—"/>
+                <TRow label="p_C"                  v={res.p_C}     d={2} unit="MPa"   color="#f59e0b"/>
+                <TRow label="σ_r  (hub, inner)"    v={res.sr_i}    d={1} unit="MPa"/>
+                <TRow label="σ_θ  (hub, inner)"    v={res.st_i}    d={1} unit="MPa"/>
+                <TRow label="σ_VM  (hub, inner)"   v={res.vm_i}    d={1} unit="MPa"   color="#f59e0b"/>
+                <TRow label="σ_Tresca (hub, inner)" v={res.sig_Tr} d={1} unit="MPa"   color="#f59e0b"/>
+                <TRow label="n_s  (Tresca)"        v={res.ns_Tr}   d={2} unit="—"
+                      color={safe ? '#22c55e' : '#ef4444'}/>
+                <TRow label="p_C,max  (Tresca)"    v={res.pC_max}  d={1} unit="MPa"/>
+              </tbody>
+            </table>
+
+            <div style={{
+              marginTop:16, padding:'9px 14px', borderRadius:4, textAlign:'center',
+              background: safe ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
+              border: `1px solid ${safe ? '#22c55e88' : '#ef444488'}`,
+              fontFamily:'JetBrains Mono', fontSize:12, fontWeight:700,
+              color: safe ? '#22c55e' : '#ef4444', letterSpacing:'0.07em'
+            }}>
+              {safe
+                ? `✓  SAFE  —  n_s = ${f(res.ns_Tr, 2)}`
+                : `✗  FAIL  —  n_s = ${f(res.ns_Tr, 2)}`}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── FASCIA 3 — PIPELINE ── */}
+      <div style={{ ...CARD, overflow:'hidden', marginBottom:20 }}>
+        <div style={{ ...SEC, padding:'13px 16px', borderBottom:'1px solid #1a2440',
+                      marginBottom:0 }}>
+          CALCULATION PIPELINE
+        </div>
+
+        {/* Step 1 */}
+        <AccStep id="s1" title="Step 1 — Geometric ratios" open={acc.s1} toggle={togAcc}>
+          <div><Cy c="Q_H = d_M / D_C"/></div>
+          {res
+            ? <div>Q_H = <Am c={f(inp.dM,1)}/> / <Am c={f(inp.DC,1)}/> = <Am c={f(res.Q_H,4)}/></div>
+            : <div style={{color:'#2d4a6a'}}>— (invalid geometry)</div>
+          }
+          <div style={{color:'#2d4a6a', fontSize:10, marginTop:4}}>
+            d_A = 0 (solid shaft) → Q_S = 0; shaft denominator term simplifies to (1/E_A)·(1−ν_A)
+          </div>
+        </AccStep>
+
+        {/* Step 2 */}
+        <AccStep id="s2" title="Step 2 — Contact pressure p_C" open={acc.s2} toggle={togAcc}>
+          {!isDelta ? (
+            <div>p_C entered directly: <Am c={f(res?.p_C, 2)}/> MPa — Step 2 bypassed.</div>
+          ) : (
+            <>
+              <div><Cy c="p_C = δ / (D_C · [hub_term + shaft_term])"/></div>
+              <div><Cy c="hub_term  = (1/E_M) · ((1+Q_H²)/(Q_H²−1) + ν_M)"/></div>
+              <div><Cy c="shaft_term = (1/E_A) · (1 − ν_A)  ← solid shaft"/></div>
+              {res && (
+                <div style={{marginTop:6}}>
+                  <div>hub_term = (1/<Am c={f(inp.E_M,0)}/>) · ((<Am c={f(1+res.Q_H2,4)}/> / <Am c={f(res.Q_H2-1,4)}/>) + <Am c={f(inp.nu_M,2)}/>)</div>
+                  <div>shaft_term = (1/<Am c={f(inp.E_A,0)}/>) · (1 − <Am c={f(inp.nu_A,2)}/>)</div>
+                  <div>p_C = <Am c={f(inp.delta,4)}/> / (<Am c={f(inp.DC,1)}/> · denominator) = <Am c={f(res.p_C,3)}/> MPa</div>
+                </div>
+              )}
+            </>
+          )}
+        </AccStep>
+
+        {/* Step 3 */}
+        <AccStep id="s3" title="Step 3 — Hub stresses (Lamé)" open={acc.s3} toggle={togAcc}>
+          <div>At inner surface  r = r_C = D_C/2{res ? ` = ${f(res.r_C,1)} mm` : ''} (critical point):</div>
+          <div style={{margin:'5px 0'}}><Cy c="σ_r(r_C) = −p_C"/></div>
+          <div><Cy c="σ_θ(r_C) = p_C · (1 + Q_H²) / (Q_H² − 1)"/></div>
+          {res && (
+            <div style={{marginTop:6}}>
+              <div>σ_r = −<Am c={f(res.p_C,2)}/> = <Am c={f(res.sr_i,1)}/> MPa</div>
+              <div>σ_θ = <Am c={f(res.p_C,2)}/> · (1 + <Am c={f(res.Q_H2,4)}/>) / (<Am c={f(res.Q_H2,4)}/> − 1) = <Am c={f(res.st_i,1)}/> MPa</div>
+              <div style={{color:'#334155', fontSize:10, marginTop:4}}>
+                General: σ_r(r) = p_C/(Q_H²−1)·(1−r_o²/r²),  σ_θ(r) = p_C/(Q_H²−1)·(1+r_o²/r²)
+              </div>
+            </div>
+          )}
+        </AccStep>
+
+        {/* Step 4 */}
+        <AccStep id="s4" title="Step 4 — Shaft stresses (solid)" open={acc.s4} toggle={togAcc}>
+          <div>Solid shaft under external pressure p_C — biaxial compression, uniform at all r:</div>
+          <div style={{margin:'5px 0'}}>
+            <Cy c="σ_r = σ_θ = −p_C  (uniform for all  0 ≤ r ≤ r_C)"/>
+          </div>
+          <div><Cy c="σ_VM = √(σ_r² + σ_θ² − σ_r·σ_θ) = √(p_C² + p_C² − p_C²) = p_C"/></div>
+          {res && (
+            <div style={{marginTop:6}}>
+              <div>σ_r = σ_θ = −<Am c={f(res.p_C,2)}/> MPa  (uniform)</div>
+              <div>σ_VM = <Am c={f(res.p_C,2)}/> MPa</div>
+            </div>
+          )}
+        </AccStep>
+
+        {/* Step 5 */}
+        <AccStep id="s5" title="Step 5 — Yield check (Tresca + Von Mises)" open={acc.s5} toggle={togAcc}>
+          <div>Critical point: hub inner surface — maximum stress state.</div>
+          <div style={{margin:'5px 0'}}>
+            <Cy c="σ_Tresca = σ_θ − σ_r = p_C · 2·Q_H² / (Q_H² − 1)"/>
+          </div>
+          <div><Cy c="σ_VM   = √(p_C² + σ_θ² + p_C·σ_θ)  [substituting σ_r = −p_C]"/></div>
+          <div><Cy c="n_s    = σ_y / σ_Tresca"/></div>
+          <div><Cy c="p_C,max = σ_y · (Q_H² − 1) / (2·Q_H²)"/></div>
+          {res && (
+            <div style={{marginTop:6}}>
+              <div>σ_Tresca = <Am c={f(res.p_C,2)}/> · 2·<Am c={f(res.Q_H2,4)}/> / (<Am c={f(res.Q_H2,4)}/> − 1) = <Am c={f(res.sig_Tr,1)}/> MPa</div>
+              <div>σ_VM = √(<Am c={f(res.p_C,2)}/>² + <Am c={f(res.st_i,1)}/>² + <Am c={f(res.p_C,2)}/>·<Am c={f(res.st_i,1)}/>) = <Am c={f(res.vm_i,1)}/> MPa</div>
+              <div>n_s = <Am c={f(inp.sigma_y,0)}/> / <Am c={f(res.sig_Tr,1)}/> =&nbsp;
+                <span style={{color: safe ? '#22c55e' : '#ef4444', fontFamily:'JetBrains Mono'}}>
+                  {f(res.ns_Tr,2)}
+                </span>
+              </div>
+              <div>p_C,max = <Am c={f(inp.sigma_y,0)}/> · (<Am c={f(res.Q_H2,4)}/> − 1) / (2·<Am c={f(res.Q_H2,4)}/>) = <Am c={f(res.pC_max,1)}/> MPa</div>
+            </div>
+          )}
+        </AccStep>
+      </div>
+
+      {/* ── FOOTER ── */}
+      <div style={{ textAlign:'center', fontFamily:'IBM Plex Sans', fontSize:10,
+                    color:'#1e293b', letterSpacing:'0.05em', paddingTop:6 }}>
+        Model: Croccolo &amp; Vincenzi (2009) — Proc. IMechE Part C
+        &nbsp;·&nbsp; Linear elastic &nbsp;·&nbsp; Plane stress (σ_z = 0) &nbsp;·&nbsp; Solid shaft
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
