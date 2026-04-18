@@ -13,6 +13,16 @@ tags:
   - structural mechanics
   - python
 ---
+
+## Interactive Calculator
+
+<iframe 
+  src="/widgets/sonnet_A3_v0.html" 
+  style="width:100%; height:1200px; border:none; border-radius:8px;"
+  loading="lazy"
+  title="A3 Interference Fit Calculator">
+</iframe>
+
 The classical Lamé equations handle a single thick-walled cylinder under internal and external pressure. Real shaft–hub assemblies are rarely that simple: multiple coaxial rings of different materials, interference fits at each interface, and a rotating load case that adds centrifugal body forces to the stress field. Croccolo & Vincenzi (2009) derived a closed-form analytical solution that covers exactly this configuration — nn
 n isotropic coaxial cylinders with arbitrary interference and rotation — and validated it against finite element analysis to within 2% on all stress components.
 
@@ -39,15 +49,6 @@ All equivalent stresses remain below typical yield strengths ($\sigma_{y,\text{s
 for structural steel, $\sigma_{y,\text{Al}} \approx 280\,\text{MPa}$ for 6061-T6),
 except element 3 inner surface ($\sigma_{VM} = 537.7\,\text{MPa}$) which exceeds the yield limit —
 **redesign needed.**
-
-## Interactive Calculator
-
-<iframe 
-  src="/widgets/sonnet_A3_v0.html" 
-  style="width:100%; height:1200px; border:none; border-radius:8px;"
-  loading="lazy"
-  title="A3 Interference Fit Calculator">
-</iframe>
 
 **Pipeline summary:**
 ![Numerical verification of thick-walled cylinder stress pipeline — node-by-node computed values](thick-walled-cylinder-pipeline-numerical.jpg)
