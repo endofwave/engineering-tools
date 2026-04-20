@@ -16,12 +16,14 @@ tags:
 
 ## Interactive Calculator
 
+<div class="wide-tool">
 <iframe 
-  src="/widgets/sonnet_A3_v0.html" 
-  style="width:100%; height:1200px; border:none; border-radius:8px;"
+  src="/widgets/A3_sonnet_v0.html" 
+  style="height:1200px;"
   loading="lazy"
   title="A3 Interference Fit Calculator">
 </iframe>
+</div>
 
 The classical Lamé equations handle a single thick-walled cylinder under internal and external pressure. Real shaft–hub assemblies are rarely that simple: multiple coaxial rings of different materials, interference fits at each interface, and a rotating load case that adds centrifugal body forces to the stress field. Croccolo & Vincenzi (2009) derived a closed-form analytical solution that covers exactly this configuration — nn
 n isotropic coaxial cylinders with arbitrary interference and rotation — and validated it against finite element analysis to within 2% on all stress components.

@@ -1,0 +1,26 @@
+/*
+  Wide calculator breakout for Serie A pages.
+  File: assets/css/extended/wide-tools.css
+  PaperMod auto-loads all files in assets/css/extended/
+  
+  Usage in markdown:
+  <div class="wide-tool">
+    <iframe src="/widgets/AX_calculator.html" ...></iframe>
+  </div>
+*/
+
+.wide-tool {
+  width: 100vw;
+  max-width: 1200px;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.wide-tool iframe {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+}

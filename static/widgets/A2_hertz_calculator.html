@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A2 — Hertz Contact Stress Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background-color:#0a0e17;color:#e2e8f0;
+  font-family:'IBM Plex Sans',sans-serif;line-height:1.5;
+  background-image:
+    repeating-linear-gradient(0deg,transparent,transparent 39px,#111d33 39px,#111d33 40px),
+    repeating-linear-gradient(90deg,transparent,transparent 39px,#111d33 39px,#111d33 40px);
+}
+#root{max-width:1200px;margin:0 auto;padding:20px 24px 60px}
+header{margin-bottom:20px;padding-bottom:15px;border-bottom:2px solid #22d3ee}
+h1{font-family:'JetBrains Mono',monospace;font-weight:700;color:#22d3ee;font-size:22px}
+.sub{color:#94a3b8;font-size:13px;margin-top:4px}
+.row{display:grid;gap:16px;margin-bottom:16px}
+.b1{grid-template-columns:42% 58%}
+.b2{grid-template-columns:55% 45%}
+.card{background:#0f1929;border:1px solid #1a2440;border-radius:6px;padding:16px}
+.ct{font-family:'JetBrains Mono',monospace;font-weight:600;color:#22d3ee;font-size:11px;
+    letter-spacing:0.1em;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #1a2440}
+.gt{font-family:'JetBrains Mono',monospace;color:#f59e0b;font-size:11px;margin-bottom:8px;font-weight:600}
+.ir{display:grid;grid-template-columns:50px 1fr 40px 90px;gap:6px;align-items:center;margin-bottom:6px}
+.il{font-family:'JetBrains Mono',monospace;font-size:12px;color:#22d3ee;font-weight:600}
+.id{font-size:12px;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iu{font-size:11px;color:#94a3b8;text-align:right}
+input[type=number]{background:#f1f5f9;color:#0f172a;border:1px solid #334155;padding:4px 7px;
+  border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:12px;width:90px;text-align:right}
+input[type=number]:focus{outline:1px solid #22d3ee}
+.dc{display:flex;justify-content:center;align-items:center;min-height:280px;background:#0a0e17;border-radius:4px;overflow:hidden}
+.dc img{width:100%;height:auto;object-fit:contain}
+.cw{width:100%;height:280px}
+.cw canvas{width:100%;height:100%}
+table{width:100%;border-collapse:collapse}
+td{padding:6px 0;border-bottom:1px solid #1a2440}
+tr:last-child td{border-bottom:none}
+.rl{font-family:'JetBrains Mono',monospace;color:#94a3b8;font-size:11px}
+.rv{font-family:'JetBrains Mono',monospace;color:#f59e0b;font-weight:600;text-align:right;font-size:12px}
+.sb{margin-top:12px;padding:7px 12px;font-family:'JetBrains Mono',monospace;font-weight:700;
+    font-size:11px;border-radius:3px;text-align:center;letter-spacing:0.06em}
+.ai{border:1px solid #1a2440;border-radius:4px;margin-bottom:4px}
+.ah{background:#0f1929;padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between;
+    align-items:center;font-family:'JetBrains Mono',monospace;font-size:12px;color:#e2e8f0}
+.ah:hover{background:#162030}
+.ah.on{border-left:3px solid #22d3ee}
+.ac{background:#080e1c;overflow:hidden;transition:max-height .3s,padding .3s;max-height:0;padding:0 14px;
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:#94a3b8;line-height:2}
+.ac.on{max-height:600px;padding:12px 14px 14px}
+.cy{color:#22d3ee}.am{color:#f59e0b}
+footer{margin-top:20px;padding-top:14px;border-top:1px solid #1a2440;text-align:center;font-size:11px;color:#94a3b8}
+@media(max-width:800px){.b1,.b2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useRef,useEffect,useMemo,useCallback}=React;
+
+/* ══════════════════════════════════════════════════════════
+   COMPUTE — Hertz contact stress pipeline (inner race)
+   Based on Anoopnath et al. (2018)
+   Brewe-Hamrock (1977) approximation for elliptic integrals
+   All internal computation in SI (m, Pa, N)
+   ══════════════════════════════════════════════════════════ */
+function compute(inp){
+  const{D_b,Z,d_i,d_o,r_i,E,nu,F_r,sigma_y}=inp;
+  // Validate
+  if(!D_b||!Z||!d_i||!d_o||!r_i||!E||!F_r||!sigma_y)return null;
+  if(D_b<=0||Z<1||d_i<=0||d_o<=d_i||r_i<=0||E<=0||F_r<=0||sigma_y<=0)return null;
+  if(r_i<=D_b/2)return null; // groove must be larger than ball radius
+
+  // Convert to SI
+  const Dw=D_b*1e-3, ri=r_i*1e-3, db=d_i*1e-3, Do=d_o*1e-3;
+  const Em=E*1e6, sy=sigma_y*1e6, v=nu;
+
+  // Step 1: Bearing geometry
+  const D_m=(db+Do)/2;
+  const r_ball=Dw/2;
+  const alpha=0; // radial bearing, contact angle = 0
+
+  // Step 2: Load on most-loaded ball (Stribeck)
+  const Q_max=5*F_r/(Z*Math.cos(alpha));
+
+  // Step 3: Reduced elastic modulus
+  const E_star=1/((1-v*v)/Em+(1-v*v)/Em);
+  const E_prime=2*E_star;
+
+  // Step 4: Curvature radii (inner race contact)
+  const rho_1x=1/r_ball;
+  const rho_1y=1/r_ball;
+  const R_2x=(D_m-Dw*Math.cos(alpha))/2;
+  const rho_2x=1/R_2x;        // convex, positive
+  const rho_2y=-1/ri;          // concave, negative
+
+  const rho_I=rho_1x+rho_2x;  // rolling plane
+  const rho_II=rho_1y+rho_2y;  // transverse plane
+  if(rho_I<=0||rho_II<=0)return null;
+
+  const R_x=1/rho_I;
+  const R_y=1/rho_II;
+  const Sigma_rho=rho_I+rho_II;
+  const R_eq=1/Sigma_rho;
+
+  // Step 5: Ellipticity — Brewe-Hamrock (1977) approximation
+  const ratio=R_y/R_x;
+  if(ratio<=0)return null;
+  const k_e=1.0339*Math.pow(ratio,0.6360);
+  const Ecal=1.0003+0.5968/ratio;               // complete elliptic 2nd kind
+  const Fcal=1.5277+0.6023*Math.log(ratio);      // complete elliptic 1st kind
+
+  // Step 6: Contact dimensions
+  const Q=Q_max;
+  const b=Math.pow(6*Ecal*Q*R_eq/(Math.PI*k_e*E_prime),1/3);
+  const a=k_e*b;
+  const A_contact=Math.PI*a*b;
+
+  // Step 7: Maximum contact pressure
+  const p0=3*Q/(2*Math.PI*a*b);
+
+  // Step 8: Subsurface shear stress (analytical)
+  const tau_max=0.300*p0;
+  const zeta_cr=0.786;
+  const z_cr=zeta_cr*b;
+
+  // Step 9: Yield check (Tresca)
+  const tau_y=sy/2;
+  const ratio_yield=tau_max/tau_y;
+  const safe=ratio_yield<1;
+
+  // Subsurface stress profile for chart (along z-axis under center)
+  const N=120;
+  const profile=[];
+  for(let i=0;i<=N;i++){
+    const zeta=i*5/N;
+    const z_mm=zeta*b*1e3;
+    const s1=1+zeta*zeta;
+    const sq=Math.sqrt(s1);
+    const sx=-p0*((1+2*zeta*zeta)/sq-2*zeta);
+    const sz=-p0/sq;
+    const sy_s=v*(sx+sz);
+    const txz=(sx-sz)/2;
+    profile.push({z:z_mm,sx:sx/1e6,sz:sz/1e6,sy:sy_s/1e6,txz:txz/1e6,zeta});
+  }
+
+  return{
+    // Geometry
+    D_m:D_m*1e3, r_ball:r_ball*1e3, f_i:ri/Dw,
+    // Load
+    Q_max,
+    // Elastic
+    E_star:E_star/1e6, E_prime:E_prime/1e6,
+    // Curvatures (display in 1/m)
+    rho_I,rho_II,R_x:R_x*1e3,R_y:R_y*1e3,Sigma_rho,R_eq:R_eq*1e3,
+    // Ellipticity
+    ratio,k_e,Ecal,Fcal,
+    // Contact
+    a:a*1e3,b:b*1e3,A_contact:A_contact*1e6,
+    // Pressure
+    p0:p0/1e6,
+    // Shear
+    tau_max:tau_max/1e6,z_cr:z_cr*1e6,zeta_cr,
+    // Yield
+    tau_y:tau_y/1e6,ratio_yield,safe,
+    // Profile for chart
+    profile
+  };
+}
+
+/* ══════════════════════════════════════════════════════════
+   CANVAS CHART — Subsurface stress profile
+   ══════════════════════════════════════════════════════════ */
+function drawChart(canvas,res){
+  if(!canvas||!res)return;
+  const dpr=window.devicePixelRatio||1;
+  const rect=canvas.getBoundingClientRect();
+  if(!rect.width||!rect.height)return;
+  canvas.width=Math.round(rect.width*dpr);
+  canvas.height=Math.round(rect.height*dpr);
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  const W=rect.width,H=rect.height;
+  const p={t:24,r:16,b:40,l:52};
+  const pw=W-p.l-p.r,ph=H-p.t-p.b;
+  if(pw<=0||ph<=0)return;
+
+  // Background
+  ctx.fillStyle='#0d1321';ctx.fillRect(0,0,W,H);
+
+  const prof=res.profile;
+  const maxZ=prof[prof.length-1].z;
+  const allS=prof.flatMap(pt=>[pt.sx,pt.sz,pt.txz]);
+  const sMin=Math.min(...allS)*1.1;
+  const sMax=Math.max(...allS)*1.15;
+
+  const xs=z=>p.l+(z/maxZ)*pw;
+  const ys=s=>p.t+(1-(s-sMin)/(sMax-sMin))*ph;
+
+  // Grid
+  for(let i=0;i<=5;i++){
+    const v=sMin+(sMax-sMin)*i/5;
+    const y=ys(v);
+    ctx.strokeStyle='#1b2844';ctx.lineWidth=0.5;
+    ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(p.l+pw,y);ctx.stroke();
+    ctx.fillStyle='#475569';ctx.font="9px 'IBM Plex Sans'";ctx.textAlign='right';
+    ctx.fillText(v.toFixed(0),p.l-4,y+3);
+  }
+  for(let i=0;i<=5;i++){
+    const z=maxZ*i/5;
+    const x=xs(z);
+    ctx.strokeStyle='#1b2844';ctx.lineWidth=0.5;
+    ctx.beginPath();ctx.moveTo(x,p.t);ctx.lineTo(x,p.t+ph);ctx.stroke();
+    ctx.fillStyle='#475569';ctx.font="9px 'IBM Plex Sans'";ctx.textAlign='center';
+    ctx.fillText(z.toFixed(2),x,p.t+ph+14);
+  }
+
+  // Border
+  ctx.strokeStyle='#1e293b';ctx.lineWidth=1;ctx.strokeRect(p.l,p.t,pw,ph);
+
+  // Zero line
+  if(sMin<0&&sMax>0){
+    ctx.strokeStyle='#1e3a5f';ctx.lineWidth=0.75;
+    ctx.beginPath();ctx.moveTo(p.l,ys(0));ctx.lineTo(p.l+pw,ys(0));ctx.stroke();
+  }
+
+  // τ_max horizontal marker
+  ctx.strokeStyle='#ef4444';ctx.lineWidth=1;ctx.setLineDash([4,3]);
+  ctx.beginPath();ctx.moveTo(p.l,ys(res.tau_max));ctx.lineTo(p.l+pw,ys(res.tau_max));ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#ef4444';ctx.font="8px 'JetBrains Mono'";ctx.textAlign='left';
+  ctx.fillText('τ_max',p.l+4,ys(res.tau_max)-3);
+
+  // Draw curves
+  const line=(field,color,dash,lw)=>{
+    ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.setLineDash(dash);
+    ctx.beginPath();
+    prof.forEach((pt,i)=>{
+      const x=xs(pt.z),y=ys(pt[field]);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.stroke();ctx.setLineDash([]);
+  };
+  line('sz','#22d3ee',[],1.5);
+  line('sx','#22d3ee',[4,3],1.5);
+  line('txz','#f59e0b',[],2.5);
+
+  // z_cr vertical marker
+  const zCrMm=res.z_cr/1e3; // μm → mm
+  if(zCrMm<=maxZ){
+    ctx.strokeStyle='#475569';ctx.lineWidth=0.75;ctx.setLineDash([3,2]);
+    ctx.beginPath();ctx.moveTo(xs(zCrMm),p.t);ctx.lineTo(xs(zCrMm),p.t+ph);ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Axis labels
+  ctx.fillStyle='#64748b';ctx.font="9px 'IBM Plex Sans'";ctx.textAlign='center';
+  ctx.fillText('depth z [mm]',p.l+pw/2,H-4);
+  ctx.save();ctx.translate(11,p.t+ph/2);ctx.rotate(-Math.PI/2);
+  ctx.fillText('stress [MPa]',0,0);ctx.restore();
+
+  // Legend
+  const lgX=p.l+pw-75,lgY=p.t+8;
+  [{c:'#22d3ee',d:[],lw:1.5,l:'σ_z'},{c:'#22d3ee',d:[4,3],lw:1.5,l:'σ_x'},{c:'#f59e0b',d:[],lw:2.5,l:'τ_xz'}]
+  .forEach(({c,d,lw,l},i)=>{
+    const y=lgY+i*14;
+    ctx.strokeStyle=c;ctx.lineWidth=lw;ctx.setLineDash(d);
+    ctx.beginPath();ctx.moveTo(lgX,y+3);ctx.lineTo(lgX+14,y+3);ctx.stroke();
+    ctx.setLineDash([]);ctx.fillStyle='#94a3b8';ctx.font="8px 'JetBrains Mono'";
+    ctx.textAlign='left';ctx.fillText(l,lgX+18,y+6);
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
+   SMALL COMPONENTS
+   ══════════════════════════════════════════════════════════ */
+const f=(v,d=2)=>(v==null||!isFinite(v))?'—':(+v).toFixed(d);
+const Cy=({c})=><span className="cy">{c}</span>;
+const Am=({c})=><span className="am">{c}</span>;
+
+const Field=({label,desc,unit,field,step,min,inputs,upd})=>(
+  <div className="ir">
+    <span className="il">{label}</span>
+    <span className="id">{desc}</span>
+    <span className="iu">{unit}</span>
+    <input type="number" step={step||'any'} min={min}
+      value={inputs[field]}
+      onChange={e=>upd(field,parseFloat(e.target.value))}/>
+  </div>
+);
+
+const Acc=({title,open,toggle,children})=>(
+  <div className="ai">
+    <div className={'ah'+(open?' on':'')} onClick={toggle}>
+      <span>{title}</span>
+      <span style={{color:'#22d3ee',fontSize:13}}>{open?'▼':'▶'}</span>
+    </div>
+    <div className={'ac'+(open?' on':'')}>{children}</div>
+  </div>
+);
+
+const TRow=({label,v,d,unit,color})=>(
+  <tr>
+    <td className="rl">{label}</td>
+    <td className="rv" style={color?{color}:undefined}>{f(v,d)} {unit}</td>
+  </tr>
+);
+
+/* ══════════════════════════════════════════════════════════
+   APP
+   ══════════════════════════════════════════════════════════ */
+function App(){
+  const [inp,setInp]=useState({
+    D_b:9.525,Z:9,d_i:30,d_o:62,r_i:4.89,
+    E:210000,nu:0.3,F_r:1000,sigma_y:1500
+  });
+  const [acc,setAcc]=useState({});
+  const canvasRef=useRef(null);
+
+  const upd=useCallback((k,v)=>setInp(p=>({...p,[k]:v})),[]);
+  const tog=useCallback(id=>setAcc(p=>({...p,[id]:!p[id]})),[]);
+
+  const res=useMemo(()=>compute(inp),[inp]);
+
+  useEffect(()=>{
+    if(!canvasRef.current)return;
+    const ro=new ResizeObserver(()=>drawChart(canvasRef.current,res));
+    ro.observe(canvasRef.current);
+    drawChart(canvasRef.current,res);
+    return()=>ro.disconnect();
+  },[res]);
+
+  return(
+  <div>
+    <header>
+      <div style={{fontFamily:'JetBrains Mono',fontSize:10,color:'#22d3ee',letterSpacing:'0.14em',marginBottom:6}}>
+        ENG-TOOLS.DEV · SERIE A · A2
+      </div>
+      <h1>Hertz Contact Stress Calculator</h1>
+      <div className="sub">Elastic contact stress in deep groove ball bearings (DGBB) — inner race</div>
+    </header>
+
+    {/* BAND 1 — INPUT + DIAGRAM */}
+    <div className="row b1">
+      <div className="card">
+        <div className="ct">INPUT PARAMETERS</div>
+        <div className="gt">Bearing Geometry</div>
+        <Field label="D_b"  desc="Ball diameter"       unit="mm" field="D_b" inputs={inp} upd={upd} min={0.1}/>
+        <Field label="Z"    desc="Number of balls"      unit="—"  field="Z"   inputs={inp} upd={upd} min={1} step={1}/>
+        <Field label="d_i"  desc="Bore diameter"        unit="mm" field="d_i" inputs={inp} upd={upd} min={0.1}/>
+        <Field label="d_o"  desc="Outer diameter"       unit="mm" field="d_o" inputs={inp} upd={upd} min={0.1}/>
+        <Field label="r_i"  desc="Inner groove radius"  unit="mm" field="r_i" inputs={inp} upd={upd} min={0.1}/>
+        <div style={{height:10}}/>
+        <div className="gt">Material (ball = race)</div>
+        <Field label="E"    desc="Young's modulus"  unit="MPa" field="E"       inputs={inp} upd={upd} min={1}/>
+        <Field label="ν"    desc="Poisson's ratio"  unit="—"   field="nu"      inputs={inp} upd={upd} min={0} step={0.01}/>
+        <Field label="σ_y"  desc="Yield strength"   unit="MPa" field="sigma_y" inputs={inp} upd={upd} min={1}/>
+        <div style={{height:10}}/>
+        <div className="gt">Applied Loading</div>
+        <Field label="F_r"  desc="Radial load"  unit="N" field="F_r" inputs={inp} upd={upd} min={0}/>
+      </div>
+
+      <div className="card">
+        <div className="ct">CONTACT GEOMETRY</div>
+        <div className="dc">
+          <img src="A2_Gemini_BallRail_3.png" alt="Hertz Contact — ball on groove"/>
+        </div>
+        {res&&<div style={{marginTop:8,fontFamily:'JetBrains Mono',fontSize:10,color:'#475569',textAlign:'center'}}>
+          D_m = {f(res.D_m,1)} mm · f_i = r_i/D_b = {f(res.f_i,4)}
+        </div>}
+      </div>
+    </div>
+
+    {/* BAND 2 — CHART + RESULTS */}
+    {res&&<div className="row b2">
+      <div className="card">
+        <div className="ct">SUBSURFACE STRESS DISTRIBUTION</div>
+        <div className="cw"><canvas ref={canvasRef}/></div>
+      </div>
+
+      <div className="card">
+        <div className="ct">RESULTS — inner race contact</div>
+        <table><tbody>
+          <TRow label="Q_max (ball load)"     v={res.Q_max}     d={1} unit="N"/>
+          <TRow label="Σρ (curvature sum)"    v={res.Sigma_rho} d={2} unit="1/m"/>
+          <TRow label="k = a/b (ellipticity)" v={res.k_e}       d={2} unit="—"/>
+          <TRow label="a (semi-axis, transv.)" v={res.a}         d={4} unit="mm"/>
+          <TRow label="b (semi-axis, rolling)" v={res.b}         d={4} unit="mm"/>
+          <TRow label="p₀ (max pressure)"     v={res.p0}        d={1} unit="MPa" color="#f59e0b"/>
+          <TRow label="τ_max (max shear)"     v={res.tau_max}   d={1} unit="MPa" color="#f59e0b"/>
+          <TRow label="z_cr (critical depth)" v={res.z_cr}      d={1} unit="μm"/>
+          <TRow label="τ_max / τ_y"           v={res.ratio_yield} d={3} unit="—"
+                color={res.safe?'#22c55e':'#ef4444'}/>
+        </tbody></table>
+
+        <div className="sb" style={{
+          background:res.safe?'rgba(34,197,94,0.1)':'rgba(239,68,68,0.1)',
+          border:'1px solid '+(res.safe?'#22c55e88':'#ef444488'),
+          color:res.safe?'#22c55e':'#ef4444'
+        }}>
+          {res.safe
+            ?`✓ SAFE — τ_max/τ_y = ${f(res.ratio_yield,3)}`
+            :`✗ YIELD — τ_max/τ_y = ${f(res.ratio_yield,3)}`}
+        </div>
+      </div>
+    </div>}
+
+    {/* BAND 3 — PIPELINE ACCORDION */}
+    <div className="card">
+      <div className="ct">CALCULATION PIPELINE</div>
+
+      <Acc title="Step 1 — Load on most-loaded ball (Stribeck)" open={acc.s1} toggle={()=>tog('s1')}>
+        <div><Cy c="Q_max = 5·F_r / (Z·cos α)"/></div>
+        <div style={{color:'#334155',fontSize:10}}>α = 0 for radial bearings (DGBB)</div>
+        {res&&<div>Q_max = 5·<Am c={f(inp.F_r,0)}/> / (<Am c={inp.Z}/> · 1) = <Am c={f(res.Q_max,2)}/> N</div>}
+      </Acc>
+
+      <Acc title="Step 2 — Reduced elastic modulus E*" open={acc.s2} toggle={()=>tog('s2')}>
+        <div><Cy c="E* = 1 / [(1−ν²)/E₁ + (1−ν²)/E₂]"/></div>
+        <div><Cy c="E' = 2·E*"/></div>
+        {res&&<div>
+          <div>E* = <Am c={f(res.E_star,2)}/> MPa ({f(res.E_star/1e3,2)} GPa)</div>
+          <div>E' = <Am c={f(res.E_prime,2)}/> MPa</div>
+        </div>}
+      </Acc>
+
+      <Acc title="Step 3 — Curvature radii and sums" open={acc.s3} toggle={()=>tog('s3')}>
+        <div><Cy c="ρ₁ₓ = ρ₁ᵧ = 1/r_ball  (ball, sphere)"/></div>
+        <div><Cy c="R₂ₓ = (D_m − D_b·cos α)/2  (race, rolling plane)"/></div>
+        <div><Cy c="ρ₂ᵧ = −1/r_i  (race groove, concave → negative)"/></div>
+        <div><Cy c="Σρ = (ρ₁ₓ+ρ₂ₓ) + (ρ₁ᵧ+ρ₂ᵧ)  →  R_eq = 1/Σρ"/></div>
+        {res&&<div style={{marginTop:4}}>
+          <div>R_x = <Am c={f(res.R_x,4)}/> mm · R_y = <Am c={f(res.R_y,4)}/> mm</div>
+          <div>R_y/R_x = <Am c={f(res.ratio,2)}/></div>
+          <div>Σρ = <Am c={f(res.Sigma_rho,2)}/> 1/m · R_eq = <Am c={f(res.R_eq,4)}/> mm</div>
+        </div>}
+      </Acc>
+
+      <Acc title="Step 4 — Ellipticity (Brewe-Hamrock 1977)" open={acc.s4} toggle={()=>tog('s4')}>
+        <div><Cy c="k = 1.0339 · (R_y/R_x)^0.6360"/></div>
+        <div><Cy c="ℰ = 1.0003 + 0.5968/(R_y/R_x)  (2nd kind)"/></div>
+        <div><Cy c="ℱ = 1.5277 + 0.6023·ln(R_y/R_x)  (1st kind)"/></div>
+        {res&&<div>
+          <div>k = <Am c={f(res.k_e,4)}/></div>
+          <div>ℰ = <Am c={f(res.Ecal,6)}/> · ℱ = <Am c={f(res.Fcal,4)}/></div>
+        </div>}
+      </Acc>
+
+      <Acc title="Step 5 — Contact dimensions and pressure" open={acc.s5} toggle={()=>tog('s5')}>
+        <div><Cy c="b = (6·ℰ·Q·R_eq / (π·k·E'))^(1/3)"/></div>
+        <div><Cy c="a = k·b"/></div>
+        <div><Cy c="p₀ = 3Q / (2π·a·b)"/></div>
+        {res&&<div>
+          <div>a = <Am c={f(res.a,4)}/> mm · b = <Am c={f(res.b,4)}/> mm</div>
+          <div>A = π·a·b = <Am c={f(res.A_contact,4)}/> mm²</div>
+          <div>p₀ = <Am c={f(res.p0,1)}/> MPa</div>
+        </div>}
+      </Acc>
+
+      <Acc title="Step 6 — Subsurface shear and yield check" open={acc.s6} toggle={()=>tog('s6')}>
+        <div><Cy c="τ_max = 0.300·p₀"/></div>
+        <div><Cy c="z_cr = 0.786·b  (critical depth)"/></div>
+        <div><Cy c="τ_y = σ_y/2  (Tresca shear yield)"/></div>
+        <div><Cy c="Check: τ_max / τ_y < 1 → safe"/></div>
+        {res&&<div>
+          <div>τ_max = 0.300 · <Am c={f(res.p0,1)}/> = <Am c={f(res.tau_max,1)}/> MPa</div>
+          <div>z_cr = 0.786 · <Am c={f(res.b,4)}/> = <Am c={f(res.z_cr,1)}/> μm</div>
+          <div>τ_y = <Am c={f(inp.sigma_y,0)}/>/2 = <Am c={f(res.tau_y,0)}/> MPa</div>
+          <div>τ_max/τ_y = <span style={{color:res.safe?'#22c55e':'#ef4444',fontFamily:'JetBrains Mono'}}>
+            {f(res.ratio_yield,3)} {res.safe?'→ Safe':'→ Yield!'}
+          </span></div>
+        </div>}
+      </Acc>
+    </div>
+
+    <footer>
+      Model: Anoopnath et al. (2018) — Hertzian theory · Elastic · Frictionless · Inner race · α = 0
+      &nbsp;·&nbsp; Elliptic integrals: Brewe-Hamrock (1977) approximation
+    </footer>
+  </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

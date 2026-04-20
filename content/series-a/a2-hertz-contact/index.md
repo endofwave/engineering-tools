@@ -8,15 +8,24 @@ summary: "Given a bearing and a radial load → maximum subsurface shear stress 
 tags: ["contact mechanics", "Hertz contact", "ball bearings", "DGBB", "subsurface shear stress", "Hamrock-Brewe", "Python"]
 categories: ["tools"]
 math: true
-ShowToc: true
+ShowToc: false
 TocOpen: true
 weight: 1
 cover:
-  image: "hertz_contact_6206.png"
-  alt: "Hertz contact pressure distribution under a ball bearing inner ring — bearing 6206 at 1000 N radial load"
-  caption: "Contact pressure and subsurface shear stress — bearing 6206 at 1000 N"
+  image: "A2_Gemini_BallRail.jpg"
+  alt: "Curved bodies in point contact has an elliptical shape"
+  caption: "Curved bodies in point contact has an elliptical shape"
   relative: false
 ---
+
+<div class="wide-tool">
+<iframe 
+  src="/widgets/A2_hertz_calculator.html"
+  style="height:1100px;"
+  loading="lazy"
+  title="A2 Hertz Contact Stress Calculator">
+</iframe>
+</div>
 
 ## Quick Example
 
