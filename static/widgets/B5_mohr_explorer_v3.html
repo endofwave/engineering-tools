@@ -1,0 +1,145 @@
+<h2 class="sr-only">Interactive Mohr circle explorer</h2>
+<style>
+.mw{background:#1a1a1a;padding:16px;border-radius:12px;color:#e5e5e5}
+.mw .rw{display:flex;gap:4px;align-items:flex-start}
+.mw .ct{display:flex;align-items:center;gap:12px;padding:14px 4px 2px;font:400 13px var(--font-sans);color:#b0b0b0}
+.mw .vl{display:flex;gap:20px;padding:6px 4px 0;font:400 13px var(--font-sans);color:#e5e5e5;flex-wrap:wrap}
+.mw .vl b{font-weight:500}
+.mw .eq{padding:12px 14px;background:#2a2a2a;border-radius:8px;margin-top:12px;font:400 13px var(--font-mono);line-height:1.75;color:#e5e5e5;overflow-x:auto}
+.mw .eq b{color:#F2A623;font-weight:500}
+.mw .eq .g{color:#888}
+.mw .eq .s{margin-top:6px}
+.mw input[type=range]{accent-color:#F2A623}
+.mw h3{margin:0 0 8px;font:500 14px var(--font-sans);color:#e5e5e5;text-align:center}
+</style>
+<div class="mw">
+<div class="rw">
+<svg viewBox="0 0 320 300" width="47%" role="img">
+<title>Physical space</title>
+<desc>Point P with inclined face. Unit vectors n-hat and s-hat form the face basis. Traction vector t decomposes into sigma_n and tau.</desc>
+<defs><marker id="ah1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<text x="160" y="22" text-anchor="middle" fill="#e5e5e5" font-family="sans-serif" font-size="14" font-weight="500">Physical space</text>
+<line x1="160" y1="170" x2="225" y2="170" stroke="#888" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#ah1)"/>
+<text x="230" y="174" fill="#888" font-family="sans-serif" font-size="12">x̂</text>
+<line x1="160" y1="170" x2="160" y2="108" stroke="#888" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#ah1)"/>
+<text x="152" y="104" fill="#888" font-family="sans-serif" font-size="12">ŷ</text>
+<line id="face" x1="160" y1="100" x2="160" y2="240" stroke="#b0b0b0" stroke-width="2" stroke-linecap="round"/>
+<circle cx="160" cy="170" r="3.5" fill="#e5e5e5"/>
+<text x="148" y="188" fill="#e5e5e5" font-family="sans-serif" font-size="14" font-weight="500">P</text>
+<line id="nh" x1="160" y1="170" x2="215" y2="170" stroke="#AFA9EC" stroke-width="2.5" marker-end="url(#ah1)"/>
+<text id="nl" x="220" y="174" fill="#AFA9EC" font-family="sans-serif" font-size="14" font-weight="500">n̂</text>
+<line id="sh" x1="160" y1="170" x2="160" y2="130" stroke="#AFA9EC" stroke-width="2.5" marker-end="url(#ah1)"/>
+<text id="sl" x="166" y="126" fill="#AFA9EC" font-family="sans-serif" font-size="14" font-weight="500">ŝ</text>
+<path id="ta" d="M0 0" fill="none" stroke="#888" stroke-width="1" opacity="0"/>
+<text id="tal" x="0" y="0" fill="#888" font-family="sans-serif" font-size="12" opacity="0">θ</text>
+<line id="snv" x1="160" y1="170" x2="210" y2="170" stroke="#F0997B" stroke-width="2" stroke-dasharray="5 3" marker-end="url(#ah1)"/>
+<text id="snl" x="173" y="186" fill="#F0997B" font-family="sans-serif" font-size="12">σ_n</text>
+<line id="tv2" x1="210" y1="170" x2="210" y2="155" stroke="#85B7EB" stroke-width="2" stroke-dasharray="5 3" marker-end="url(#ah1)"/>
+<text id="tl2" x="216" y="165" fill="#85B7EB" font-family="sans-serif" font-size="12">τ</text>
+<line id="tv" x1="160" y1="170" x2="210" y2="155" stroke="#F2A623" stroke-width="3" marker-end="url(#ah1)"/>
+<text id="tl" x="218" y="152" fill="#F2A623" font-family="sans-serif" font-size="14" font-weight="500">t</text>
+<path id="ra" d="M0 0" fill="none" stroke="#888" stroke-width="1"/>
+</svg>
+<svg viewBox="0 0 360 300" width="53%" role="img">
+<title>Mohr circle</title>
+<desc>Cerchio di Mohr nel piano sigma tau. Il punto si sposta tracciando un arco liscio.</desc>
+<defs><marker id="ah2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<text x="180" y="22" text-anchor="middle" fill="#e5e5e5" font-family="sans-serif" font-size="14" font-weight="500">Mohr circle</text>
+<line x1="40" y1="160" x2="320" y2="160" stroke="#888" stroke-width="1" marker-end="url(#ah2)"/>
+<text x="325" y="164" fill="#888" font-family="sans-serif" font-size="12">σ</text>
+<line x1="180" y1="275" x2="180" y2="50" stroke="#888" stroke-width="1" marker-end="url(#ah2)"/>
+<text x="185" y="48" fill="#888" font-family="sans-serif" font-size="12">τ</text>
+<circle cx="180" cy="160" r="85" fill="none" stroke="#e5e5e5" stroke-width="1.5"/>
+<circle cx="180" cy="160" r="2.5" fill="#e5e5e5"/>
+<text x="183" y="177" fill="#e5e5e5" font-family="sans-serif" font-size="12">σ_m</text>
+<line x1="265" y1="156" x2="265" y2="164" stroke="#e5e5e5" stroke-width="1.4"/>
+<text x="258" y="181" fill="#e5e5e5" font-family="sans-serif" font-size="12">σ₁</text>
+<line x1="95" y1="156" x2="95" y2="164" stroke="#e5e5e5" stroke-width="1.4"/>
+<text x="88" y="181" fill="#e5e5e5" font-family="sans-serif" font-size="12">σ₂</text>
+<circle cx="240" cy="100" r="4" fill="none" stroke="#e5e5e5" stroke-width="1.4"/>
+<text x="248" y="97" fill="#e5e5e5" font-family="sans-serif" font-size="12">θ=0°</text>
+<path id="tr" d="M0 0" fill="none" stroke="#F2A623" stroke-width="2.5" opacity="0" stroke-linecap="round"/>
+<line id="rl" x1="180" y1="160" x2="240" y2="100" stroke="#888" stroke-width="1" stroke-dasharray="3 2"/>
+<line id="pv" x1="240" y1="100" x2="240" y2="160" stroke="#F0997B" stroke-width="1.3" stroke-dasharray="3 2"/>
+<line id="ph" x1="240" y1="100" x2="180" y2="100" stroke="#85B7EB" stroke-width="1.3" stroke-dasharray="3 2"/>
+<circle id="pt" cx="240" cy="100" r="6.5" fill="#F2A623"/>
+<text id="srn" x="240" y="176" text-anchor="middle" fill="#F0997B" font-family="sans-serif" font-size="12">100</text>
+<text id="trn" x="175" y="104" text-anchor="end" fill="#85B7EB" font-family="sans-serif" font-size="12">30</text>
+<text id="a2t" x="0" y="0" fill="#F2A623" font-family="sans-serif" font-size="12" opacity="0">2θ=0°</text>
+</svg>
+</div>
+<div class="ct">
+<span>θ</span>
+<input type="range" id="sl" min="0" max="180" value="0" style="flex:1" oninput="U(+this.value)"/>
+<span id="td" style="min-width:36px;text-align:right">0°</span>
+</div>
+<div class="vl">
+<span><b style="color:#F0997B">σ_n</b> = <span id="vsn">100.0</span> MPa</span>
+<span><b style="color:#85B7EB">τ</b> = <span id="vt">30.0</span> MPa</span>
+<span><b style="color:#F2A623">|t|</b> = <span id="vm">104.4</span> MPa</span>
+</div>
+<div class="eq">
+<div><span class="g">σ_n = σ_m + a·cos2θ + τ_xy·sin2θ</span></div>
+<div id="e1">&nbsp;&nbsp;&nbsp;&nbsp;= 70 + 30·cos(0°) + 30·sin(0°) = <b>100.0 MPa</b></div>
+<div class="s"><span class="g">τ &nbsp;&nbsp;= −a·sin2θ + τ_xy·cos2θ</span></div>
+<div id="e2">&nbsp;&nbsp;&nbsp;&nbsp;= −30·sin(0°) + 30·cos(0°) = <b>30.0 MPa</b></div>
+</div>
+</div>
+<script>
+var P=160,Q=170,fL=70,nL=55,eL=40,vS=0.5;
+var Cx=180,Cy=160,Rp=85,M=2;
+var sx=100,sy=40,txy=30,sm=70,a=30;
+var A0=Math.atan2(txy,a);
+function L(i,x1,y1,x2,y2){var e=document.getElementById(i);e.setAttribute('x1',x1);e.setAttribute('y1',y1);e.setAttribute('x2',x2);e.setAttribute('y2',y2);}
+function T(i,x,y){var e=document.getElementById(i);e.setAttribute('x',x);e.setAttribute('y',y);}
+function A(i,k,v){document.getElementById(i).setAttribute(k,v);}
+function U(d){
+var t=d*Math.PI/180,c=Math.cos(t),s=Math.sin(t),c2=Math.cos(2*t),s2=Math.sin(2*t);
+var sn=sm+a*c2+txy*s2,tau=-a*s2+txy*c2;
+var tx=sx*c+txy*s,ty=txy*c+sy*s,mag=Math.sqrt(tx*tx+ty*ty);
+var nx=c,ny=-s,ex=-s,ey=-c;
+L('face',P+fL*ex,Q+fL*ey,P-fL*ex,Q-fL*ey);
+var nX=P+nL*nx,nY=Q+nL*ny;
+L('nh',P,Q,nX,nY);T('nl',nX+8*nx-3,nY+8*ny+4);
+var eX=P+eL*ex,eY=Q+eL*ey;
+L('sh',P,Q,eX,eY);T('sl',eX+8*ex-3,eY+8*ey+4);
+if(d>2){var aR=22;
+A('ta','d','M'+(P+aR)+' '+Q+' A '+aR+' '+aR+' 0 '+(d>180?1:0)+' 0 '+(P+aR*c)+' '+(Q-aR*s));
+T('tal',P+30*Math.cos(t/2)-4,Q-30*Math.sin(t/2)+4);
+A('tal','opacity','1');A('ta','opacity','0.8');
+}else{A('tal','opacity','0');A('ta','opacity','0');}
+var Tx=P+tx*vS,Ty=Q-ty*vS,tdm=Math.sqrt(tx*tx+ty*ty)||1;
+L('tv',P,Q,Tx,Ty);T('tl',Tx+10*tx/tdm-2,Ty-10*ty/tdm);
+var Nx=P+vS*sn*nx,Ny=Q+vS*sn*ny;
+L('snv',P,Q,Nx,Ny);T('snl',(P+Nx)/2+16*s-12,(Q+Ny)/2+16*c+4);
+L('tv2',Nx,Ny,Tx,Ty);T('tl2',(Nx+Tx)/2+14*c-4,(Ny+Ty)/2-14*s+4);
+var RM=7,bnx=-nx*RM,bny=-ny*RM;
+var dx=Tx-Nx,dy=Ty-Ny,dl=Math.sqrt(dx*dx+dy*dy)||1;
+var bx=dx/dl*RM,by=dy/dl*RM;
+A('ra','d','M'+(Nx+bnx)+' '+(Ny+bny)+'L'+(Nx+bnx+bx)+' '+(Ny+bny+by)+'L'+(Nx+bx)+' '+(Ny+by));
+var px=Cx+(sn-sm)*M,py=Cy-tau*M;
+A('pt','cx',px);A('pt','cy',py);
+L('rl',Cx,Cy,px,py);
+L('pv',px,py,px,Cy);L('ph',px,py,Cx,py);
+T('srn',px,Cy+16);document.getElementById('srn').textContent=sn.toFixed(0);
+T('trn',Cx-5,py+4);document.getElementById('trn').textContent=tau.toFixed(0);
+if(d>0){
+var sX=Cx+Rp*Math.cos(A0),sY=Cy-Rp*Math.sin(A0);
+var la=2*t>Math.PI?1:0;
+A('tr','d','M'+sX+' '+sY+' A '+Rp+' '+Rp+' 0 '+la+' 1 '+px+' '+py);
+A('tr','opacity','0.65');
+var ddx=px-Cx,ddy=py-Cy,ddl=Math.sqrt(ddx*ddx+ddy*ddy)||1;
+T('a2t',Cx+ddx/ddl*(Rp+20)-14,Cy+ddy/ddl*(Rp+20)+4);
+document.getElementById('a2t').textContent='2θ='+2*d+'°';
+A('a2t','opacity','1');
+}else{A('tr','opacity','0');A('a2t','opacity','0');}
+document.getElementById('td').textContent=d+'°';
+document.getElementById('vsn').textContent=sn.toFixed(1);
+document.getElementById('vt').textContent=tau.toFixed(1);
+document.getElementById('vm').textContent=mag.toFixed(1);
+var dd=2*d;
+document.getElementById('e1').innerHTML='&nbsp;&nbsp;&nbsp;&nbsp;= 70 + 30·cos('+dd+'°) + 30·sin('+dd+'°) = <b>'+sn.toFixed(1)+' MPa</b>';
+document.getElementById('e2').innerHTML='&nbsp;&nbsp;&nbsp;&nbsp;= −30·sin('+dd+'°) + 30·cos('+dd+'°) = <b>'+tau.toFixed(1)+' MPa</b>';
+}
+U(0);
+</script>
