@@ -66,6 +66,9 @@ menu:
       name: Contact
       url: /contact/
       weight: 50
+    - name: Disclaimer
+      url: /disclaimer/
+      weight: 90
 
 # ── Outputs (for search) ────────────────────────────────────────
 outputs:
