@@ -54,18 +54,22 @@ menu:
       name: "Series B — Open Formula"
       url: /series-b/
       weight: 20
+    - identifier: series-e
+      name: "Series E — Essays"
+      url: /series-e/
+      weight: 30
     - identifier: search
       name: Search
       url: /search/
-      weight: 30
+      weight: 50
     - identifier: about
       name: About
       url: /about/
-      weight: 40
+      weight: 60
     - identifier: contact
       name: Contact
       url: /contact/
-      weight: 50
+      weight: 70
     - name: Disclaimer
       url: /disclaimer/
       weight: 90
