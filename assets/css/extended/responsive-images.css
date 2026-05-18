@@ -8,3 +8,17 @@
   max-width: 100%;
   height: auto;
 }
+
+/*
+  Long equations: horizontal scroll on mobile.
+  File: assets/css/extended/math-mobile.css
+*/
+
+.math-display,
+.katex-display,
+.post-content .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.5rem 0;
+}
