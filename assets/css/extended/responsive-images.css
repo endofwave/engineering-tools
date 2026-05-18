@@ -1,11 +1,10 @@
 /*
   Responsive images for mobile.
   File: assets/css/extended/responsive-images.css
+  PaperMod auto-loads all files in assets/css/extended/
 */
 
-img,
-.post-content img,
-article img {
-  max-width: 100% !important;
-  height: auto !important;
+.post-content img {
+  max-width: 100%;
+  height: auto;
 }
