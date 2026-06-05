@@ -15,11 +15,13 @@ cover:
 
 Engineering Tools is a collection of open-source calculation pipelines and formula derivations for mechanical engineering.
 
-The project has two lines:
+The project has three lines:
 
 **Series A — Papers → Tools** takes methods published in technical papers and turns them into documented, replicable calculation chains. Each tool includes a step-by-step pipeline with explicit inputs and outputs at every node, a numerical verification case, and a Python notebook runnable on Google Colab. Where the source paper contains errors, they are identified, corrected, and documented.
 
 **Series B — Open Formula** traces recurring structural formulas back to first principles. Each derivation starts from a physical hypothesis and arrives at the final boxed formula through numbered equations with cross-references, validity limits stated alongside each step, and assumptions listed in the order they entered. The reader is assumed to be an engineer who is verifying, not a student who is learning.
+
+**Series E — Engineering Essays** follows one idea through a single paper, from the physical question that opens it to the mechanism that answers it. Each essay is built around an interactive explorer: the reader turns the model's parameters and watches the behaviour change, instead of only reading about it. These pieces are not paper summaries — they are guided paths to the moment a result becomes surprising, written to leave the reader with the physical intuition behind it.
 
 Everything is open: the site source, the notebooks, the derivations. Use them, check them, break them.
 

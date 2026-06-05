@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mode-Coupling Explorer — Hoffmann (2002)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f4f1ea; --panel:#fbfaf6; --ink:#23231f; --muted:#6f6e66;
+    --line:#d9d6cc; --line2:#e7e4db;
+    --screen:#0d1512; --screengrid:rgba(120,160,140,0.10);
+    --stable:#1d9e75; --stable-d:#0f6e56;
+    --unstable:#d8542f; --unstable-d:#993c1d;
+    --critical:#e0992a; --critical-d:#854f0b;
+    --accent:#1d9e75;
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:transparent}
+  .wrap{
+    font-family:'IBM Plex Sans',sans-serif; color:var(--ink);
+    background:var(--paper); border:1px solid var(--line);
+    border-radius:14px; padding:20px; max-width:1080px; margin:0 auto;
+    line-height:1.5;
+  }
+  .head{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 16px;margin-bottom:4px}
+  .head h1{font-size:19px;font-weight:600;margin:0;letter-spacing:-0.01em}
+  .head .ref{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--muted)}
+  .sub{font-size:13px;color:var(--muted);margin:2px 0 16px}
+
+  .ctl{
+    display:flex;flex-wrap:wrap;align-items:center;gap:14px 18px;
+    background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius);
+    padding:13px 16px;margin-bottom:14px;
+  }
+  .dwrap{display:flex;align-items:center;gap:12px;flex:1;min-width:260px}
+  .dwrap label{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;white-space:nowrap}
+  .dwrap input[type=range]{flex:1;min-width:120px}
+  .dval{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;min-width:54px;text-align:right}
+  .btns{display:flex;gap:8px;flex-wrap:wrap}
+  button{
+    font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;font-weight:500;
+    border:1px solid var(--line);background:#fff;color:var(--ink);
+    padding:6px 11px;border-radius:7px;cursor:pointer;transition:all .12s;
+  }
+  button:hover{border-color:#bcb9ae;background:#fcfbf8}
+  button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  button.primary:hover{background:#3a3a35}
+  .presets{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .presets .plabel{font-size:11.5px;color:var(--muted);margin-right:2px}
+  .chip{font-family:'IBM Plex Mono',monospace;font-size:11.5px;padding:5px 9px;border-radius:20px;border:1px solid var(--line)}
+  .chip.active{border-color:var(--ink);background:var(--ink);color:#fff}
+  .toggles{display:flex;gap:14px;align-items:center;font-size:12.5px;color:var(--muted);flex-wrap:wrap}
+  .toggles label{display:flex;align-items:center;gap:5px;cursor:pointer;user-select:none}
+
+  .grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:14px}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius);padding:12px 13px 10px}
+  .panel .ttl{font-size:12px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .panel .ttl .hint{font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted);opacity:.8}
+  .rightcol{display:grid;grid-template-rows:auto auto;gap:14px;min-width:0}
+  canvas{display:block;width:100%;border-radius:6px}
+  .scope{background:var(--screen)}
+  .modelpanel{margin-top:14px}
+
+  .readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px;margin-top:14px}
+  .ro{background:var(--panel);border:1px solid var(--line2);border-radius:9px;padding:9px 11px}
+  .ro .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .ro .v{font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;margin-top:2px}
+  .ro .v small{font-size:11px;font-weight:400;color:var(--muted)}
+  .ro .sub2{font-size:9.5px;color:var(--muted);margin-top:2px}
+  .regime{grid-column:span 1}
+  .badge{display:inline-block;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12.5px;padding:4px 10px;border-radius:7px;margin-top:3px}
+  .badge.stable{background:rgba(29,158,117,.13);color:var(--stable-d)}
+  .badge.critical{background:rgba(224,153,42,.16);color:var(--critical-d)}
+  .badge.unstable{background:rgba(216,84,47,.13);color:var(--unstable-d)}
+
+  details.adv{margin-top:14px;background:var(--panel);border:1px solid var(--line2);border-radius:var(--radius);padding:0 14px}
+  details.adv summary{cursor:pointer;font-size:13px;font-weight:500;padding:11px 0;color:var(--ink);list-style:none;display:flex;align-items:center;gap:7px}
+  details.adv summary::-webkit-details-marker{display:none}
+  details.adv summary::before{content:"▸";color:var(--muted);font-size:11px;transition:transform .15s}
+  details.adv[open] summary::before{transform:rotate(90deg)}
+  .advbody{padding:0 0 14px;display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center}
+  @media(max-width:620px){.advbody{grid-template-columns:1fr}}
+  .ksliders{display:grid;gap:9px}
+  .krow{display:grid;grid-template-columns:46px 1fr 56px;align-items:center;gap:10px}
+  .krow label{font-family:'IBM Plex Mono',monospace;font-size:12.5px}
+  .krow .kv{font-family:'IBM Plex Mono',monospace;font-size:12.5px;text-align:right;color:var(--muted)}
+  .matrix{font-family:'IBM Plex Mono',monospace;font-size:13px;display:flex;align-items:center;gap:8px;color:var(--muted)}
+  .matgrid{display:grid;grid-template-columns:auto auto;gap:4px 14px;padding:8px 12px;border-left:2px solid var(--line);border-right:2px solid var(--line);border-radius:3px}
+  .matgrid span{text-align:center;color:var(--ink);font-weight:500}
+  .matgrid .fric{color:var(--unstable-d)}
+  .cap{font-size:11.5px;color:var(--muted);margin-top:14px;line-height:1.55}
+  .cap code{font-family:'IBM Plex Mono',monospace;font-size:11px;background:#ece9e0;padding:1px 4px;border-radius:3px}
+  input[type=range]{accent-color:var(--accent);height:4px}
+  input[type=checkbox]{accent-color:var(--accent)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel">
+const {useState,useRef,useEffect,useMemo,useCallback} = React;
+
+// ----- fixed model geometry (alpha1=150°, alpha2=30°) -----
+// k11=(3/4)(k1+k2), k12=(√3/4)(k2-k1), k22=(1/4)(k1+k2)+k3
+const K1_0 = (2/3)*(2-Math.sqrt(3));   // ≈0.179
+const K2_0 = (2/3)*(2+Math.sqrt(3));   // ≈2.488
+const K3_0 = 4/3;                      // ≈1.333
+
+function coeffs(k1,k2,k3){
+  const a = 0.75*(k1+k2);                 // k11
+  const c = (Math.sqrt(3)/4)*(k2-k1);     // k12 = k21 (structural cross-coupling)
+  const d = 0.25*(k1+k2)+k3;              // k22
+  return {a,c,d};
+}
+// stiffness matrix entries with friction: upper-right = c - D, lower-left = c
+// equations: x'' = -(a x + (c-D) y),  y'' = -(c x + d y)
+
+// spectrum at given D (returns frequencies + growth rate)
+function spectrum(a,c,d,D){
+  const b = c - D;
+  const tr = a + d;
+  const detK = a*d - b*c;            // for λ²+trλ+detK=0, λ=s²
+  const disc = tr*tr - 4*detK;       // coalescence when disc=0
+  if(disc >= 0){
+    const r = Math.sqrt(disc);
+    const l1 = (-tr + r)/2, l2 = (-tr - r)/2;   // both ≤0 in regime of interest
+    return {stable:true, sigma:0,
+            w1:Math.sqrt(Math.max(0,-l1)), w2:Math.sqrt(Math.max(0,-l2)),
+            disc};
+  } else {
+    const reL = -tr/2, imL = Math.sqrt(-disc)/2;
+    const mod = Math.hypot(reL,imL);
+    const sigma = Math.sqrt(Math.max(0,(mod+reL)/2));
+    const omega = Math.sqrt(Math.max(0,(mod-reL)/2));
+    return {stable:false, sigma, w1:omega, w2:omega, disc};
+  }
+}
+function Dcrit(a,c,d){ return ((a-d)*(a-d) + 4*c*c)/(4*c); }
+
+// real eigenvector directions of K (the two normal-mode axes), valid when disc>0
+function modeDirs(a,c,d,D){
+  const b=c-D, tr=a+d, det=a*d-b*c, disc=tr*tr-4*det;
+  if(disc<0) return null;
+  const r=Math.sqrt(disc);
+  const mk1=(tr+r)/2, mk2=(tr-r)/2; // eigenvalues of K (μ_K = -λ = s²·(-1)... here ω²=μ_K)
+  // eigvec for μ: (a-μ)vx + b vy =0 → v=(b, μ-a)
+  const dirs=[mk1,mk2].map(mu=>{
+    let vx=b, vy=mu-a;
+    if(Math.abs(vx)<1e-9 && Math.abs(vy)<1e-9){ vx=mu-d; vy=c; }
+    const n=Math.hypot(vx,vy)||1; return {x:vx/n,y:vy/n};
+  });
+  return dirs;
+}
+
+const PRESETS=[
+  {label:"D=0",    D:0.0},
+  {label:"0.9",    D:0.9},
+  {label:"1.0",    D:1.0},
+  {label:"1.1",    D:1.1},
+  {label:"2.0",    D:2.0},
+];
+
+function App(){
+  const [D,setD]=useState(0.9);
+  const [k1,setK1]=useState(K1_0);
+  const [k2,setK2]=useState(K2_0);
+  const [k3,setK3]=useState(K3_0);
+  const [playing,setPlaying]=useState(true);
+  const [showField,setShowField]=useState(true);
+  const [showTrail,setShowTrail]=useState(true);
+  const [showModes,setShowModes]=useState(true);
+  const [showGeom,setShowGeom]=useState(true);   // NEW: live in-plane force arrows
+  const [showArea,setShowArea]=useState(true);    // NEW: signed swept area
+  const [ro,setRo]=useState({sigma:0,w1:1,w2:1.73,stable:true,W:0,A:0});
+
+  // mutable params mirror for the RAF loop
+  const P=useRef({D,k1,k2,k3,playing,showField,showTrail,showModes,showGeom,showArea});
+  useEffect(()=>{P.current={D,k1,k2,k3,playing,showField,showTrail,showModes,showGeom,showArea};},
+            [D,k1,k2,k3,playing,showField,showTrail,showModes,showGeom,showArea]);
+
+  // simulation state
+  const sim=useRef({x:5,vx:0,y:0,vy:0,t:0,trail:[],ts:[],W:0,A:0,Whist:[]});
+  const resetSim=useCallback(()=>{
+    sim.current={x:5,vx:0,y:0.6,vy:0,t:0,trail:[],ts:[],W:0,A:0,Whist:[]};
+  },[]);
+
+  const cPhase=useRef(null), cTs=useRef(null), cEig=useRef(null), cModel=useRef(null);
+
+  // crisp canvas sizing
+  useEffect(()=>{
+    function fit(cv,h){
+      if(!cv) return;
+      const dpr=window.devicePixelRatio||1;
+      const w=cv.clientWidth;
+      cv.width=w*dpr; cv.height=h*dpr;
+      const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+    }
+    function fitAll(){
+      fit(cPhase.current, cPhase.current?cPhase.current.clientWidth:360);
+      fit(cTs.current,160); fit(cEig.current,210); fit(cModel.current,240);
+    }
+    // phase square: set height = width via attribute
+    if(cPhase.current){ cPhase.current.style.height=cPhase.current.clientWidth+'px'; }
+    fitAll();
+    window.addEventListener('resize',()=>{
+      if(cPhase.current){ cPhase.current.style.height=cPhase.current.clientWidth+'px'; }
+      fitAll();
+    });
+  },[]);
+
+  // ---- main animation loop ----
+  useEffect(()=>{
+    let raf, frame=0;
+    const loop=()=>{
+      const p=P.current;
+      const {a,c,d}=coeffs(p.k1,p.k2,p.k3);
+      const b=c-p.D;
+      const S=sim.current;
+      if(p.playing){
+        const dt=0.02, sub=3;
+        for(let i=0;i<sub;i++){
+          // RK4 on [x,vx,y,vy]
+          const f=(s)=>[s[1], -(a*s[0]+b*s[2]), s[3], -(c*s[0]+d*s[2])];
+          const y0=[S.x,S.vx,S.y,S.vy];
+          const k_1=f(y0);
+          const k_2=f(y0.map((v,j)=>v+0.5*dt*k_1[j]));
+          const k_3=f(y0.map((v,j)=>v+0.5*dt*k_2[j]));
+          const k_4=f(y0.map((v,j)=>v+dt*k_3[j]));
+          S.x +=dt/6*(k_1[0]+2*k_2[0]+2*k_3[0]+k_4[0]);
+          S.vx+=dt/6*(k_1[1]+2*k_2[1]+2*k_3[1]+k_4[1]);
+          S.y +=dt/6*(k_1[2]+2*k_2[2]+2*k_3[2]+k_4[2]);
+          S.vy+=dt/6*(k_1[3]+2*k_2[3]+2*k_3[3]+k_4[3]);
+          S.t +=dt;
+          S.A += S.y * S.vx * dt;          // ∮ y dx  (signed orbit area)
+          S.W += p.D * S.y * S.vx * dt;    // friction work ∫ D·y·ẋ dt  (= D·A)
+        }
+        S.trail.push([S.x,S.y]); if(S.trail.length>700) S.trail.shift();
+        S.ts.push([S.t,S.x,S.y]); if(S.ts.length>520) S.ts.shift();
+        S.Whist.push(S.W); if(S.Whist.length>520) S.Whist.shift();
+      }
+      drawPhase(p,{a,b,c,d});
+      drawModel(p,{a,b,c,d});
+      drawTs();
+      if(frame%4===0){
+        const sp=spectrum(a,c,d,p.D);
+        setRo({sigma:sp.sigma,w1:sp.w1,w2:sp.w2,stable:sp.stable,W:S.W,A:S.A});
+      }
+      frame++;
+      raf=requestAnimationFrame(loop);
+    };
+    raf=requestAnimationFrame(loop);
+    return ()=>cancelAnimationFrame(raf);
+  },[]);
+
+  // redraw eigen plot when k's change (and mark current D each frame via overlay redraw)
+  useEffect(()=>{ drawEig(P.current); });
+  useEffect(()=>{
+    let raf;
+    const tick=()=>{ drawEig(P.current); raf=requestAnimationFrame(tick); };
+    raf=requestAnimationFrame(tick);
+    return ()=>cancelAnimationFrame(raf);
+  },[]);
+
+  function regimeColor(sp){
+    if(!sp) return getCss('--muted');
+    if(sp.sigma>1e-3) return getCss('--unstable');
+    if(Math.abs(sp.disc)<0.04) return getCss('--critical');
+    return getCss('--stable');
+  }
+  function getCss(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+
+  // ---------- PHASE PLANE ----------
+  function drawPhase(p,M){
+    const cv=cPhase.current; if(!cv) return;
+    const ctx=cv.getContext('2d');
+    const W=cv.clientWidth, H=cv.clientWidth;
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle=getCss('--screen'); ctx.fillRect(0,0,W,H);
+    const S=sim.current;
+    const sp=spectrum(M.a,M.c,M.d,p.D);
+    const col=regimeColor(sp);
+
+    // world extent: auto-fit to recent trail
+    let mx=6;
+    for(const pt of S.trail){ mx=Math.max(mx,Math.abs(pt[0]),Math.abs(pt[1])); }
+    mx=Math.max(mx,Math.abs(S.x),Math.abs(S.y));
+    const ext=mx*1.18;
+    const sc=(W/2)/ext;
+    const X=v=>W/2+v*sc, Y=v=>H/2-v*sc;
+
+    // grid
+    ctx.strokeStyle=getCss('--screengrid'); ctx.lineWidth=1;
+    const step=niceStep(ext);
+    ctx.beginPath();
+    for(let g=-Math.ceil(ext/step)*step;g<=ext;g+=step){
+      ctx.moveTo(X(g),0); ctx.lineTo(X(g),H);
+      ctx.moveTo(0,Y(g)); ctx.lineTo(W,Y(g));
+    }
+    ctx.stroke();
+    // axes
+    ctx.strokeStyle='rgba(170,200,185,0.28)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,Y(0));ctx.lineTo(W,Y(0)); ctx.moveTo(X(0),0);ctx.lineTo(X(0),H); ctx.stroke();
+    ctx.fillStyle='rgba(170,200,185,0.55)'; ctx.font="500 12px 'IBM Plex Mono',monospace";
+    ctx.fillText("x  (in-plane)",W-94,Y(0)-7);
+    ctx.save(); ctx.translate(X(0)+8,12); ctx.fillText("y  (out-of-plane)",0,0); ctx.restore();
+
+    // signed swept area (W = D·∮y dx made visible) — drawn under the trail
+    if(p.showArea && S.trail.length>2){
+      const cIn=getCss('--unstable'), cOut=getCss('--stable');
+      for(let i=1;i<S.trail.length;i++){
+        const x0=S.trail[i-1][0], y0v=S.trail[i-1][1];
+        const x1=S.trail[i][0],   y1v=S.trail[i][1];
+        const dx=x1-x0; if(dx===0) continue;
+        const ybar=(y0v+y1v)/2; const dA=ybar*dx;       // local contribution to ∮y dx
+        const fade=i/S.trail.length;                     // recent = stronger
+        const al=0.03+0.16*fade;
+        ctx.fillStyle=hexA(dA>=0?cIn:cOut, al);
+        ctx.beginPath();
+        ctx.moveTo(X(x0),Y(0)); ctx.lineTo(X(x0),Y(y0v));
+        ctx.lineTo(X(x1),Y(y1v)); ctx.lineTo(X(x1),Y(0));
+        ctx.closePath(); ctx.fill();
+      }
+    }
+
+    // force field (restoring vectors), toggle
+    if(p.showField){
+      const n=11;
+      for(let i=0;i<n;i++) for(let j=0;j<n;j++){
+        const wx=(-ext)+ (2*ext)*i/(n-1);
+        const wy=(-ext)+ (2*ext)*j/(n-1);
+        const fx=-(M.a*wx+M.b*wy), fy=-(M.c*wx+M.d*wy);
+        const fn=Math.hypot(fx,fy)||1;
+        const len=Math.min(step*sc*0.42, 16);
+        const ux=fx/fn, uy=fy/fn;
+        const sx=X(wx), sy=Y(wy);
+        const ex=sx+ux*len, ey=sy-uy*len;
+        ctx.strokeStyle='rgba(150,185,170,0.30)'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(ex,ey); ctx.stroke();
+        ctx.beginPath(); ctx.arc(ex,ey,1.3,0,7); ctx.fillStyle='rgba(150,185,170,0.45)'; ctx.fill();
+      }
+    }
+
+    // normal-mode axes (only when stable / distinct)
+    if(p.showModes){
+      const dirs=modeDirs(M.a,M.c,M.d,p.D);
+      if(dirs){
+        ctx.setLineDash([5,5]); ctx.lineWidth=1.4;
+        ctx.strokeStyle='rgba(224,153,42,0.62)';
+        for(const dr of dirs){
+          ctx.beginPath();
+          ctx.moveTo(X(-dr.x*ext),Y(-dr.y*ext));
+          ctx.lineTo(X(dr.x*ext),Y(dr.y*ext));
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
+      }
+    }
+
+    // trail
+    if(p.showTrail && S.trail.length>1){
+      for(let i=1;i<S.trail.length;i++){
+        const al=i/S.trail.length;
+        ctx.strokeStyle=hexA(col,0.10+0.55*al); ctx.lineWidth=1+1.4*al;
+        ctx.beginPath();
+        ctx.moveTo(X(S.trail[i-1][0]),Y(S.trail[i-1][1]));
+        ctx.lineTo(X(S.trail[i][0]),Y(S.trail[i][1]));
+        ctx.stroke();
+      }
+    }
+    // mass
+    ctx.beginPath(); ctx.arc(X(S.x),Y(S.y),5.5,0,7);
+    ctx.fillStyle=col; ctx.fill();
+    ctx.beginPath(); ctx.arc(X(S.x),Y(S.y),9,0,7);
+    ctx.strokeStyle=hexA(col,0.5); ctx.lineWidth=1.5; ctx.stroke();
+  }
+
+  // ---------- MODEL SCHEMATIC + LIVE IN-PLANE FORCES (renders 3.4 visible) ----------
+  function drawModel(p,M){
+    const cv=cModel.current; if(!cv) return;
+    const ctx=cv.getContext('2d');
+    const W=cv.clientWidth, H=240;
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle=getCss('--screen'); ctx.fillRect(0,0,W,H);
+    const S=sim.current;
+    const sp=spectrum(M.a,M.c,M.d,p.D);
+    const col=regimeColor(sp);
+
+    // recent amplitude (self-scaling: arrows shrink near y≈0, never saturate when blowing up)
+    let myY=0.3, myX=0.3;
+    for(const pt of S.trail){ myY=Math.max(myY,Math.abs(pt[1])); myX=Math.max(myX,Math.abs(pt[0])); }
+    myY=Math.max(myY,Math.abs(S.y)); myX=Math.max(myX,Math.abs(S.x));
+
+    // rest geometry of the schematic
+    const cx=W*0.5, cy=H*0.46, beltY=H*0.82, bw=66, bh=40;
+    const dispScale=Math.min((H*0.13)/myY, (W*0.12)/myX, 70);
+    const bx=cx + clamp(S.x*dispScale, -W*0.15, W*0.15);
+    const by=cy - clamp(S.y*dispScale, -H*0.13, H*0.13);
+
+    // belt
+    ctx.strokeStyle='rgba(150,185,170,0.5)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(0,beltY); ctx.lineTo(W,beltY); ctx.stroke();
+    ctx.strokeStyle='rgba(150,185,170,0.16)'; ctx.lineWidth=1;
+    for(let hx=-20;hx<W;hx+=14){ ctx.beginPath(); ctx.moveTo(hx,beltY+11); ctx.lineTo(hx+11,beltY); ctx.stroke(); }
+    const off=(S.t*38)%56;
+    ctx.fillStyle='rgba(150,185,170,0.40)'; ctx.font="500 11px 'IBM Plex Mono',monospace"; ctx.textAlign='left';
+    for(let ax=off;ax<W;ax+=56){ ctx.fillText('▶', ax, beltY-3); }
+    ctx.fillStyle='rgba(150,185,170,0.55)'; ctx.textAlign='right';
+    ctx.fillText('belt (slides →)', W-12, beltY+22); ctx.textAlign='left';
+
+    // anchors + springs
+    const aL={x:cx-W*0.30, y:H*0.10}, aR={x:cx+W*0.30, y:H*0.10};
+    drawAnchor(ctx,aL.x,aL.y); drawAnchor(ctx,aR.x,aR.y);
+    ctx.strokeStyle='rgba(170,200,185,0.55)'; ctx.lineWidth=1.4;
+    drawSpring(ctx, aL.x,aL.y, bx-bw*0.34, by-bh*0.5, 9);  // k1 up-left (α=150°)
+    drawSpring(ctx, aR.x,aR.y, bx+bw*0.34, by-bh*0.5, 9);  // k2 up-right (α=30°)
+    drawSpring(ctx, bx, by+bh*0.5, bx, beltY, 7);          // k3 vertical contact
+    ctx.fillStyle='rgba(170,200,185,0.7)'; ctx.font="500 11px 'IBM Plex Mono',monospace";
+    ctx.fillText('k₁', (aL.x+bx)/2-16, (aL.y+by)/2-2);
+    ctx.fillText('k₂', (aR.x+bx)/2+8,  (aR.y+by)/2-2);
+    ctx.fillText('k₃', bx+7, (by+beltY)/2);
+
+    // block (mass)
+    ctx.fillStyle=hexA(col,0.16); ctx.strokeStyle=col; ctx.lineWidth=1.6;
+    roundRect(ctx,bx-bw/2,by-bh/2,bw,bh,6); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=col; ctx.font="600 12px 'IBM Plex Mono',monospace"; ctx.textAlign='center';
+    ctx.fillText('m', bx, by+4); ctx.textAlign='left';
+
+    // live in-plane forces (horizontal), driven by current y
+    if(p.showGeom){
+      const yy=S.y;
+      const Fel  = -M.c*yy;          // elastic cross-coupling in x  (−k₁₂·y)
+      const Ffr  =  p.D*yy;          // friction in x                (+D·y)
+      const Fnet = -(M.c-p.D)*yy;    // resultant in-plane y-force   (−(k₁₂−D)·y)
+      const refF = Math.max(M.c,p.D,1e-6)*myY;
+      const maxLen=W*0.23, px=maxLen/(refF||1);
+      const yEl=by-9, yFr=by+9;
+      arrow(ctx, bx, yEl, bx+Fel*px,  yEl, '#7fd8c0', 2.6);              // elastic (green)
+      arrow(ctx, bx, yFr, bx+Ffr*px,  yFr, getCss('--unstable'), 2.6);  // friction (red)
+      arrow(ctx, bx, by,  bx+Fnet*px, by,  '#e9e4d8', 1.6);             // resultant (light/ink)
+
+      // legend
+      ctx.font="500 10.5px 'IBM Plex Mono',monospace"; ctx.textAlign='left';
+      ctx.fillStyle='#7fd8c0';            ctx.fillText('elastic  −k₁₂·y', 12, 20);
+      ctx.fillStyle=getCss('--unstable'); ctx.fillText('friction  +D·y',   12, 36);
+      ctx.fillStyle='#e9e4d8';            ctx.fillText('resultant −(k₁₂−D)·y', 12, 52);
+
+      // balance tag at D=k₁₂
+      if(Math.abs(M.c-p.D)<0.03){
+        ctx.fillStyle=getCss('--critical'); ctx.font="600 12.5px 'IBM Plex Mono',monospace"; ctx.textAlign='center';
+        ctx.fillText('⇄ BALANCE — in-plane decoupled (D = k₁₂)', cx, H-12); ctx.textAlign='left';
+      }
+    }
+
+    // F_F law + live state
+    ctx.fillStyle='rgba(170,200,185,0.62)'; ctx.font="500 10.5px 'IBM Plex Mono',monospace"; ctx.textAlign='right';
+    ctx.fillText('F_F = μk₃·y   ·   |F_F| ∝ |y|', W-12, 20);
+    ctx.fillText('x='+S.x.toFixed(2)+'   y='+S.y.toFixed(2), W-12, 36);
+    ctx.textAlign='left';
+  }
+
+  // ---------- TIME SERIES ----------
+  function drawTs(){
+    const cv=cTs.current; if(!cv) return;
+    const ctx=cv.getContext('2d');
+    const W=cv.clientWidth,H=160;
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle=getCss('--screen'); ctx.fillRect(0,0,W,H);
+    const S=sim.current;
+    if(S.ts.length<2){ return; }
+    const t0=S.ts[0][0], t1=S.ts[S.ts.length-1][0];
+    let amp=1e-6;
+    for(const r of S.ts){ amp=Math.max(amp,Math.abs(r[1]),Math.abs(r[2])); }
+    amp*=1.15;
+    const TX=t=>(t-t0)/((t1-t0)||1)*W;
+    const VY=v=>H/2 - v/amp*(H/2-8);
+    // grid
+    ctx.strokeStyle=getCss('--screengrid'); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,H/2);ctx.lineTo(W,H/2); ctx.stroke();
+    // y(t)
+    line(ctx,S.ts,2,TX,VY,getCss('--unstable'),1.6);
+    // x(t)
+    line(ctx,S.ts,1,TX,VY,'#7fd8c0',1.6);
+    // legend
+    ctx.font="500 11px 'IBM Plex Mono',monospace";
+    ctx.fillStyle='#7fd8c0'; ctx.fillText("x(t)",8,15);
+    ctx.fillStyle=getCss('--unstable'); ctx.fillText("y(t)",46,15);
+  }
+  function line(ctx,arr,idx,TX,VY,color,w){
+    ctx.strokeStyle=color; ctx.lineWidth=w; ctx.beginPath();
+    for(let i=0;i<arr.length;i++){
+      const x=TX(arr[i][0]), y=VY(arr[i][idx]);
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+    }
+    ctx.stroke();
+  }
+
+  // ---------- EIGEN SPECTRUM vs D ----------
+  function drawEig(p){
+    const cv=cEig.current; if(!cv) return;
+    const ctx=cv.getContext('2d');
+    const W=cv.clientWidth,H=210;
+    ctx.clearRect(0,0,W,H);
+    const {a,c,d}=coeffs(p.k1,p.k2,p.k3);
+    const Dmax=2, N=160;
+    const dc=Dcrit(a,c,d);
+    // two stacked subplots: freq (top), growth (bottom)
+    const padL=34, padR=10, padT=16, gap=22;
+    const topH=(H-padT-gap-14)/2, botH=topH;
+    const topY=padT, botY=padT+topH+gap;
+    const PX=D=>padL+(D/Dmax)*(W-padL-padR);
+
+    // sample
+    const fs=[], gs=[];
+    let wmax=0,gmax=1e-6;
+    for(let i=0;i<=N;i++){
+      const D=Dmax*i/N; const sp=spectrum(a,c,d,D);
+      fs.push([D,sp.w1,sp.w2,sp.stable]); gs.push([D,sp.sigma,sp.stable]);
+      wmax=Math.max(wmax,sp.w1,sp.w2); gmax=Math.max(gmax,sp.sigma);
+    }
+    wmax*=1.12; gmax*=1.25;
+    const FY=w=>topY+topH-(w/wmax)*(topH-6);
+    const GY=g=>botY+botH/2-(g/gmax)*(botH/2-4);
+
+    // frames
+    ctx.strokeStyle=getCss('--line'); ctx.lineWidth=1;
+    ctx.strokeRect(padL,topY,W-padL-padR,topH);
+    ctx.strokeRect(padL,botY,W-padL-padR,botH);
+    ctx.fillStyle=getCss('--muted'); ctx.font="500 10.5px 'IBM Plex Mono',monospace";
+    ctx.fillText("ω",6,topY+12); ctx.fillText("σ",6,botY+12);
+    ctx.fillText("D",W-padR-12,H-2);
+    // zero line for σ
+    ctx.strokeStyle=getCss('--line2');
+    ctx.beginPath(); ctx.moveTo(padL,GY(0));ctx.lineTo(W-padR,GY(0)); ctx.stroke();
+
+    // critical marker
+    if(dc>0 && dc<Dmax){
+      ctx.strokeStyle='rgba(224,153,42,0.5)'; ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.moveTo(PX(dc),topY);ctx.lineTo(PX(dc),botY+botH); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle=getCss('--critical-d'); ctx.font="500 10px 'IBM Plex Mono',monospace";
+      ctx.fillText("D_c="+dc.toFixed(2),PX(dc)+4,topY+11);
+    }
+    // frequency branches
+    plotBranch(ctx,fs,1,PX,FY,'#1d9e75');
+    plotBranch(ctx,fs,2,PX,FY,'#1d9e75');
+    // growth ±σ
+    ctx.strokeStyle=getCss('--unstable'); ctx.lineWidth=1.7; ctx.beginPath();
+    let started=false;
+    for(const r of gs){ const x=PX(r[0]),y=GY(r[1]); started?ctx.lineTo(x,y):ctx.moveTo(x,y); started=true;}
+    ctx.stroke();
+    ctx.beginPath(); started=false;
+    for(const r of gs){ const x=PX(r[0]),y=GY(-r[1]); started?ctx.lineTo(x,y):ctx.moveTo(x,y); started=true;}
+    ctx.stroke();
+
+    // current-D cursor
+    const xc=PX(p.D);
+    ctx.strokeStyle=getCss('--ink'); ctx.lineWidth=1.3;
+    ctx.beginPath(); ctx.moveTo(xc,topY);ctx.lineTo(xc,botY+botH); ctx.stroke();
+    const sp=spectrum(a,c,d,p.D);
+    dot(ctx,xc,FY(sp.w1),getCss('--ink')); dot(ctx,xc,FY(sp.w2),getCss('--ink'));
+    dot(ctx,xc,GY(sp.sigma),getCss('--unstable')); dot(ctx,xc,GY(-sp.sigma),getCss('--unstable'));
+  }
+  function plotBranch(ctx,arr,idx,PX,FY,color){
+    ctx.strokeStyle=color; ctx.lineWidth=1.7; ctx.beginPath();
+    let started=false;
+    for(const r of arr){ const x=PX(r[0]),y=FY(r[idx]); started?ctx.lineTo(x,y):ctx.moveTo(x,y); started=true; }
+    ctx.stroke();
+  }
+  function dot(ctx,x,y,c){ ctx.beginPath();ctx.arc(x,y,3,0,7);ctx.fillStyle=c;ctx.fill(); }
+
+  function niceStep(ext){
+    const raw=ext/4; const p=Math.pow(10,Math.floor(Math.log10(raw)));
+    const m=raw/p; return (m<1.5?1:m<3.5?2:m<7.5?5:10)*p;
+  }
+  function hexA(hex,a){
+    hex=hex.replace('#','');
+    const r=parseInt(hex.slice(0,2),16),g=parseInt(hex.slice(2,4),16),b=parseInt(hex.slice(4,6),16);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+
+  // matrix display values
+  const {a:ma,c:mc,d:md}=coeffs(k1,k2,k3);
+  const mb=mc-D;
+  const dc=Dcrit(ma,mc,md);
+  const mu=D/k3;
+  const regName = ro.sigma>1e-3?'unstable':(Math.abs(spectrum(ma,mc,md,D).disc)<0.04?'critical':'stable');
+  const regLabel = regName==='unstable'?'Unstable · squeal':regName==='critical'?'Critical · coalescence':'Stable · beating';
+
+  const setPreset=(pd)=>{ setD(pd); };
+
+  return (
+    <div className="wrap">
+      <div className="head">
+        <h1>Mode-coupling instability — minimal model</h1>
+        <span className="ref">Hoffmann, Fischer, Allgaier &amp; Gaul · Mech. Res. Comm. 29 (2002) 197–205</span>
+      </div>
+      <div className="sub">
+        A mass on a sliding belt, two degrees of freedom (x parallel, y normal to the contact).
+        Friction couples y→x in one direction only. Move <b>D&nbsp;=&nbsp;μk₃</b> and watch the mass go
+        from stable beating to squeal.
+      </div>
+
+      <div className="ctl">
+        <div className="dwrap">
+          <label>D = μk₃</label>
+          <input type="range" min="0" max="2" step="0.01" value={D}
+                 onChange={e=>setD(parseFloat(e.target.value))}/>
+          <span className="dval">{D.toFixed(2)}</span>
+        </div>
+        <div className="btns">
+          <button className="primary" onClick={()=>setPlaying(p=>!p)}>{playing?'❚❚ Pause':'▶ Play'}</button>
+          <button onClick={resetSim}>↺ Restart motion</button>
+        </div>
+        <div className="presets">
+          <span className="plabel">Regimes:</span>
+          {PRESETS.map(pr=>(
+            <span key={pr.label}
+                  className={"chip"+(Math.abs(D-pr.D)<0.005?' active':'')}
+                  onClick={()=>setPreset(pr.D)} style={{cursor:'pointer'}}>{pr.label}</span>
+          ))}
+        </div>
+        <div className="toggles">
+          <label><input type="checkbox" checked={showField} onChange={e=>setShowField(e.target.checked)}/>force field</label>
+          <label><input type="checkbox" checked={showModes} onChange={e=>setShowModes(e.target.checked)}/>modal axes</label>
+          <label><input type="checkbox" checked={showTrail} onChange={e=>setShowTrail(e.target.checked)}/>orbit</label>
+          <label><input type="checkbox" checked={showArea} onChange={e=>setShowArea(e.target.checked)}/>area</label>
+          <label><input type="checkbox" checked={showGeom} onChange={e=>setShowGeom(e.target.checked)}/>geometry</label>
+        </div>
+      </div>
+
+      <div className="grid">
+        <div className="panel">
+          <div className="ttl">Phase plane x–y · mass motion</div>
+          <canvas ref={cPhase} className="scope"></canvas>
+        </div>
+        <div className="rightcol">
+          <div className="panel">
+            <div className="ttl">Time series</div>
+            <canvas ref={cTs} className="scope" style={{height:'160px'}}></canvas>
+          </div>
+          <div className="panel">
+            <div className="ttl">Spectrum vs D · frequencies and growth rate</div>
+            <canvas ref={cEig} style={{height:'210px'}}></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div className="panel modelpanel">
+        <div className="ttl">Model geometry · live in-plane forces
+          <span className="hint">&nbsp;— elastic (−k₁₂y) vs friction (+Dy): they cancel at D=k₁₂ (3.4)</span></div>
+        <canvas ref={cModel} className="scope" style={{height:'240px'}}></canvas>
+      </div>
+
+      <div className="readouts">
+        <div className="ro regime">
+          <div className="k">Regime</div>
+          <span className={"badge "+regName}>{regLabel}</span>
+        </div>
+        <div className="ro"><div className="k">D = μk₃</div><div className="v">{D.toFixed(2)}</div></div>
+        <div className="ro"><div className="k">μ <small>(=D/k₃)</small></div><div className="v">{mu.toFixed(2)}</div></div>
+        <div className="ro"><div className="k">D critical</div><div className="v">{dc.toFixed(2)}</div></div>
+        <div className="ro"><div className="k">σ <small>growth</small></div>
+          <div className="v" style={{color:ro.sigma>1e-3?getCss('--unstable-d'):getCss('--ink')}}>{ro.sigma.toFixed(3)}</div></div>
+        <div className="ro"><div className="k">ω <small>freq.</small></div>
+          <div className="v">{ro.stable? (ro.w1.toFixed(2)+' · '+ro.w2.toFixed(2)) : ro.w1.toFixed(2)}</div></div>
+        <div className="ro"><div className="k">Area ∮y dx</div>
+          <div className="v" style={{color: ro.A>0?getCss('--unstable-d'):getCss('--stable-d'),fontSize:'15px'}}>
+            {fmtW(ro.A)}</div>
+          <div className="sub2">W = D·A</div></div>
+        <div className="ro"><div className="k">W friction <small>cumul.</small></div>
+          <div className="v" style={{color: ro.W>0?getCss('--unstable-d'):getCss('--stable-d'),fontSize:'15px'}}>
+            {fmtW(ro.W)}</div></div>
+      </div>
+
+      <details className="adv">
+        <summary>Structural parameters and stiffness matrix</summary>
+        <div className="advbody">
+          <div className="ksliders">
+            <KRow lab="k₁" val={k1} min={0.05} max={1.5} step={0.001} set={setK1}/>
+            <KRow lab="k₂" val={k2} min={0.5}  max={4}   step={0.001} set={setK2}/>
+            <KRow lab="k₃" val={k3} min={0.3}  max={3}   step={0.001} set={setK3}/>
+            <button style={{justifySelf:'start',marginTop:'2px'}}
+              onClick={()=>{setK1(K1_0);setK2(K2_0);setK3(K3_0);}}>reset to canonical values</button>
+          </div>
+          <div className="matrix">
+            <span style={{fontSize:'22px'}}>K =</span>
+            <div className="matgrid">
+              <span>{ma.toFixed(2)}</span><span className="fric">{mb.toFixed(2)}</span>
+              <span>{mc.toFixed(2)}</span><span>{md.toFixed(2)}</span>
+            </div>
+            <span style={{fontSize:'11.5px',lineHeight:1.4}}>
+              off-diagonal<br/>
+              <span style={{color:'var(--unstable-d)'}}>k₁₂−D = {mb.toFixed(2)}</span> ≠ k₂₁ = {mc.toFixed(2)}<br/>
+              <span style={{color:'var(--muted)'}}>the asymmetry is friction</span>
+            </span>
+          </div>
+        </div>
+      </details>
+
+      <div className="cap">
+        Equations integrated live (RK4): <code>ẍ = −(k₁₁x + (k₁₂−D)y)</code>, <code>ÿ = −(k₂₁x + k₂₂y)</code>,
+        with α₁=150°, α₂=30°. The phase plane auto-rescales: for D&gt;D_c the spiral grows
+        without bound but the <i>shape</i> stays visible. The dashed modal axes (orange) are the two
+        normal-mode directions — they coalesce at D_c and vanish beyond it. <code>W</code> is the net
+        friction work ∮D·y·ẋ&nbsp;dt: positive (red) = energy pumped into the system.
+        <br/><br/>
+        <b>Model geometry</b> (panel below): the two in-plane forces <i>that depend on y</i> — the elastic
+        pull of the oblique springs <code>−k₁₂y</code> (green) and friction <code>+Dy</code> (red) — drawn live on the block.
+        At <code>D=k₁₂</code> they have equal length and opposite direction: they cancel, the in-plane equation decouples
+        (Hoffmann's balance, eq. 7). For <code>D&gt;k₁₂</code> the red overtakes the green and the <i>resultant</i> flips direction
+        — the geometric face of the sign change of (1−D).
+        <br/>
+        <b>Area</b> (fill in the phase plane): the signed <code>y·dx</code> strips. Summed they give
+        <code>∮y dx</code>, and <code>W = D·∮y dx</code>: the friction work <i>is</i> the orbit area. In phase → straight line → zero area;
+        out of phase → ellipse → net area, with sign (red = pump, green = dissipate).
+      </div>
+    </div>
+  );
+}
+
+function KRow({lab,val,min,max,step,set}){
+  return (
+    <div className="krow">
+      <label>{lab}</label>
+      <input type="range" min={min} max={max} step={step} value={val}
+             onChange={e=>set(parseFloat(e.target.value))}/>
+      <span className="kv">{val.toFixed(2)}</span>
+    </div>
+  );
+}
+function fmtW(W){
+  const a=Math.abs(W);
+  if(a<1000 && a>=0.01) return W.toFixed(1);
+  if(a<0.01) return W.toFixed(2);
+  return W.toExponential(1);
+}
+
+// ---- pure canvas helpers (no closure needed) ----
+function clamp(v,lo,hi){ return Math.max(lo,Math.min(hi,v)); }
+function arrow(ctx,x1,y1,x2,y2,color,w){
+  ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=w;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  const dx=x2-x1, dy=y2-y1, L=Math.hypot(dx,dy);
+  if(L<4) return;
+  const ux=dx/L, uy=dy/L, hs=6.5;
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-ux*hs-uy*hs*0.55, y2-uy*hs+ux*hs*0.55);
+  ctx.lineTo(x2-ux*hs+uy*hs*0.55, y2-uy*hs-ux*hs*0.55);
+  ctx.closePath(); ctx.fill();
+}
+function drawSpring(ctx,x1,y1,x2,y2,coils){
+  const dx=x2-x1, dy=y2-y1, L=Math.hypot(dx,dy)||1;
+  const ux=dx/L, uy=dy/L, px=-uy, py=ux;
+  const lead=Math.min(10,L*0.18), amp=4, segL=(L-2*lead)/coils;
+  ctx.beginPath(); ctx.moveTo(x1,y1);
+  const x1b=x1+ux*lead, y1b=y1+uy*lead; ctx.lineTo(x1b,y1b);
+  for(let i=0;i<coils;i++){
+    const t=i+0.5, s=(i%2===0)?1:-1;
+    ctx.lineTo(x1b+ux*segL*t+px*amp*s, y1b+uy*segL*t+py*amp*s);
+  }
+  const x2b=x2-ux*lead, y2b=y2-uy*lead; ctx.lineTo(x2b,y2b); ctx.lineTo(x2,y2);
+  ctx.stroke();
+}
+function drawAnchor(ctx,x,y){
+  ctx.fillStyle='rgba(170,200,185,0.5)'; ctx.fillRect(x-13,y-4,26,4);
+  ctx.strokeStyle='rgba(170,200,185,0.4)'; ctx.lineWidth=1;
+  for(let i=-12;i<=12;i+=5){ ctx.beginPath(); ctx.moveTo(x+i,y); ctx.lineTo(x+i-5,y+6); ctx.stroke(); }
+}
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
