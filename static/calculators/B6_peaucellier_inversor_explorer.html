@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Peaucellier inversor — explorer</title>
+<style>
+  :root{
+    --bg:#0f0e0c; --ink:#ededea; --muted:#9c9a93; --line:#34332d; --panel:#1b1a16;
+    --green:#97c459; --orange:#ef9f27; --teal:#5dcaa5; --locus:#afa9ec; --circle:#7a7972;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:16px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+  #root{max-width:720px;margin:0 auto}
+  .caption{font-size:14px;color:var(--muted);margin:0 0 12px;line-height:1.5}
+  .caption b{color:var(--ink);font-weight:600}
+  .stage{width:100%;border:1px solid var(--line);border-radius:10px;background:#131210;display:block}
+  .controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:14px}
+  .ctl label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+  .ctl .row{display:flex;align-items:center;gap:8px}
+  .ctl input[type=range]{flex:1;accent-color:var(--locus)}
+  .ctl .val{font-size:13px;font-weight:600;min-width:42px;text-align:right}
+  .bar{display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap}
+  button{font:inherit;font-size:14px;padding:7px 16px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);cursor:pointer}
+  button:active{transform:scale(.98)}
+  .readouts{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
+  .rd{background:var(--panel);border-radius:8px;padding:10px 12px;text-align:center}
+  .rd .lab{font-size:12px;color:var(--muted)}
+  .rd .num{font-size:18px;font-weight:600;margin-top:2px}
+  .rd.acc .num{color:var(--locus)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState, useMemo, useEffect, useRef} = React;
+const W = 700, H = 440, PAD = 48;
+
+function thetaRange(a,b,r){
+  const lo = Math.acos(Math.min((a+b)/(2*r), 1));
+  const hi = Math.acos(Math.max((a-b)/(2*r), 0));
+  return [lo, hi];
+}
+function geom(theta,a,b,r){
+  const k = a*a - b*b;
+  const OP = 2*r*Math.cos(theta);
+  const ux = Math.cos(theta), uy = Math.sin(theta);
+  const P = {x:OP*ux, y:OP*uy};
+  const OQ = k/OP;
+  const Q = {x:OQ*ux, y:OQ*uy};
+  const M = {x:(P.x+Q.x)/2, y:(P.y+Q.y)/2};
+  const dx=Q.x-P.x, dy=Q.y-P.y, L=Math.hypot(dx,dy)||1e-9;
+  const MP=L/2;
+  const h=Math.sqrt(Math.max(0, b*b-MP*MP));
+  const nx=-dy/L, ny=dx/L;
+  const A={x:M.x+h*nx, y:M.y+h*ny};
+  const B={x:M.x-h*nx, y:M.y-h*ny};
+  return {k, OP, OQ, P, Q, A, B};
+}
+
+function App(){
+  const [a,setA] = useState(3.0);
+  const [b,setB] = useState(1.0);
+  const [r,setR] = useState(1.4);
+  const [playing,setPlaying] = useState(true);
+  const speed = 0.6;
+
+  const [lo,hi] = thetaRange(a,b,r);
+  const [theta,setTheta] = useState(lo);
+  const dir = useRef(1);
+  const raf = useRef(0);
+
+  useEffect(()=>{ setTheta(t=>Math.min(Math.max(t,lo),hi)); }, [a,b,r,lo,hi]);
+
+  useEffect(()=>{
+    if(!playing) return;
+    let prev = performance.now();
+    const step = (now)=>{
+      const dt = Math.min(0.05,(now-prev)/1000); prev = now;
+      setTheta(t=>{
+        let nt = t + dir.current*speed*dt;
+        if(nt>=hi){nt=hi; dir.current=-1;}
+        if(nt<=lo){nt=lo; dir.current= 1;}
+        return nt;
+      });
+      raf.current = requestAnimationFrame(step);
+    };
+    raf.current = requestAnimationFrame(step);
+    return ()=>cancelAnimationFrame(raf.current);
+  }, [playing,lo,hi]);
+
+  const view = useMemo(()=>{
+    const k = a*a-b*b;
+    const pts = [{x:0,y:0},{x:r,y:0},{x:2*r,y:0},{x:k/(2*r),y:0}];
+    const N=28;
+    for(let i=0;i<=N;i++){
+      const t = lo+(hi-lo)*i/N;
+      const g = geom(t,a,b,r);
+      pts.push(g.P,g.Q,g.A,g.B);
+    }
+    let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
+    pts.forEach(p=>{minx=Math.min(minx,p.x);maxx=Math.max(maxx,p.x);miny=Math.min(miny,p.y);maxy=Math.max(maxy,p.y);});
+    const bw=(maxx-minx)||1, bh=(maxy-miny)||1;
+    const s=Math.min((W-2*PAD)/bw,(H-2*PAD)/bh);
+    const ox=(W-bw*s)/2 - minx*s;
+    const oy=(H-bh*s)/2 + maxy*s;
+    return {s,ox,oy,k};
+  }, [a,b,r,lo,hi]);
+
+  const T = (p)=>({x:view.ox+p.x*view.s, y:view.oy-p.y*view.s});
+
+  const g = geom(theta,a,b,r);
+  const C = {x:r,y:0}, D = {x:2*r,y:0}, O={x:0,y:0};
+  const lineX = view.k/(2*r);
+  const Qlo = geom(lo,a,b,r).Q, Qhi = geom(hi,a,b,r).Q;
+
+  const oP=T(O), cP=T(C), dP=T(D), pP=T(g.P), qP=T(g.Q), aP=T(g.A), bP=T(g.B);
+  const xlinePx = T({x:lineX,y:0}).x;
+  const segLo=T(Qlo), segHi=T(Qhi);
+
+  const set = (setter,min,max)=>(e)=>{ let v=parseFloat(e.target.value); v=Math.min(max,Math.max(min,v)); setter(v); };
+  const bMax = a-0.3;
+  const rMin = Math.max(0.8, (a-b)/2 + 0.05);
+
+  return (
+    <div>
+      <p className="caption">Drive the crank: <b>P</b> runs on the motor circle (through O); its inverse <b>Q</b> traces the vertical line x = (a&sup2;&minus;b&sup2;)/2r. The product OP&middot;OQ stays fixed.</p>
+
+      <svg className="stage" viewBox={`0 0 ${W} ${H}`}>
+        <circle cx={cP.x} cy={cP.y} r={r*view.s} fill="none" stroke="var(--circle)" strokeWidth="1" strokeDasharray="5 5"/>
+        <line x1={20} y1={oP.y} x2={W-20} y2={oP.y} stroke="var(--circle)" strokeWidth="0.8" strokeDasharray="9 3 2 3"/>
+        <line x1={xlinePx} y1={28} x2={xlinePx} y2={H-28} stroke="var(--locus)" strokeWidth="1" strokeDasharray="6 4" opacity="0.45"/>
+        <line x1={segLo.x} y1={segLo.y} x2={segHi.x} y2={segHi.y} stroke="var(--locus)" strokeWidth="3"/>
+
+        <line x1={oP.x} y1={oP.y} x2={aP.x} y2={aP.y} stroke="var(--green)" strokeWidth="3"/>
+        <line x1={oP.x} y1={oP.y} x2={bP.x} y2={bP.y} stroke="var(--green)" strokeWidth="3"/>
+        <polygon points={`${pP.x},${pP.y} ${aP.x},${aP.y} ${qP.x},${qP.y} ${bP.x},${bP.y}`} fill="none" stroke="var(--orange)" strokeWidth="3"/>
+        <line x1={cP.x} y1={cP.y} x2={pP.x} y2={pP.y} stroke="var(--teal)" strokeWidth="3"/>
+
+        {[[oP,"O"],[cP,"C"],[dP,"D"]].map(([p,l],i)=>(
+          <g key={i}><circle cx={p.x} cy={p.y} r="4" fill="var(--ink)"/><text x={p.x} y={p.y+18} fontSize="13" textAnchor="middle" fill="var(--muted)">{l}</text></g>
+        ))}
+        <circle cx={aP.x} cy={aP.y} r="4.5" fill="var(--ink)"/><text x={aP.x} y={aP.y-9} fontSize="13" textAnchor="middle" fill="var(--ink)">A</text>
+        <circle cx={bP.x} cy={bP.y} r="4.5" fill="var(--ink)"/><text x={bP.x+10} y={bP.y+5} fontSize="13" fill="var(--ink)">B</text>
+        <circle cx={pP.x} cy={pP.y} r="5.5" fill="var(--teal)"/><text x={pP.x-9} y={pP.y-8} fontSize="14" fontWeight="600" fill="var(--teal)" textAnchor="end">P</text>
+        <circle cx={qP.x} cy={qP.y} r="5.5" fill="var(--locus)"/><text x={qP.x+10} y={qP.y+4} fontSize="14" fontWeight="600" fill="var(--locus)">Q</text>
+      </svg>
+
+      <div className="controls">
+        <div className="ctl"><label>arm a</label><div className="row"><input type="range" min="2" max="4" step="0.05" value={a} onChange={e=>{const v=parseFloat(e.target.value); setA(v); if(b>v-0.3)setB(+(v-0.3).toFixed(2)); if(r<(v-b)/2+0.05)setR(+((v-b)/2+0.05).toFixed(2));}}/><span className="val">{a.toFixed(2)}</span></div></div>
+        <div className="ctl"><label>rhombus side b</label><div className="row"><input type="range" min="0.5" max={bMax} step="0.05" value={b} onChange={e=>{const v=Math.min(bMax,parseFloat(e.target.value)); setB(v); if(r<(a-v)/2+0.05)setR(+((a-v)/2+0.05).toFixed(2));}}/><span className="val">{b.toFixed(2)}</span></div></div>
+        <div className="ctl"><label>crank radius r</label><div className="row"><input type="range" min={rMin} max="2.6" step="0.05" value={r} onChange={set(setR,rMin,2.6)}/><span className="val">{r.toFixed(2)}</span></div></div>
+        <div className="ctl"><label>crank angle &theta;</label><div className="row"><input type="range" min={lo} max={hi} step="0.005" value={theta} onChange={e=>{setPlaying(false); setTheta(parseFloat(e.target.value));}}/><span className="val">{(theta*180/Math.PI).toFixed(0)}&deg;</span></div></div>
+      </div>
+
+      <div className="bar">
+        <button onClick={()=>setPlaying(p=>!p)}>{playing?"Pause":"Play"}</button>
+        <span style={{fontSize:"13px",color:"var(--muted)"}}>green: arms a &middot; orange: rhombus b &middot; teal: crank r &middot; purple: locus of Q</span>
+      </div>
+
+      <div className="readouts">
+        <div className="rd"><div className="lab">OP</div><div className="num">{g.OP.toFixed(2)}</div></div>
+        <div className="rd"><div className="lab">OQ</div><div className="num">{g.OQ.toFixed(2)}</div></div>
+        <div className="rd acc"><div className="lab">OP &middot; OQ</div><div className="num">{(g.OP*g.OQ).toFixed(2)}</div></div>
+        <div className="rd acc"><div className="lab">line x = (a&sup2;&minus;b&sup2;)/2r</div><div className="num">{lineX.toFixed(2)}</div></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
