@@ -19,6 +19,7 @@ cover:
 ---
 [International Journal of Impact Engineering - Dimensionless formulae for penetration depth of concrete target impacted by a non-deformable projectile](https://www.sciencedirect.com/science/article/abs/pii/S0734743X02000374?via%3Dihub)
 
+> **New to this problem?** Start with the [interactive explainer](/explainer/a4-penetration-depth/) — drive the two-zone penetration model, then read the full theory. Then come back here for the computational pipeline.
 
 Over six decades of ballistic testing have produced dozens of empirical formulae for concrete penetration — NDRC, Barr (UKAEA), ACE. All three share the same structural defects: unit-dependent coefficients that break when switching from SI to imperial, nose shape parameters assigned as discrete lookup values rather than computed from geometry, and calibration ranges limited to shallow impacts ($0.6 < X/d < 2.0$) that collapse at deep penetration ($X/d > 5$) with errors exceeding 20%.
 
@@ -68,11 +69,6 @@ The 26.9 mm ogive projectile at 277 m/s penetrates 167 mm into 35 MPa concrete �
 ![Block diagram of the concrete penetration depth pipeline — 7 nodes from nose geometry to depth X](concrete-penetration-pipeline-diagram.jpg)
 
 The pipeline is sequential with one bifurcation. Nodes 0–3 are always executed. Node 4 selects the depth formula based on whether $I$ exceeds the crater threshold $\pi k/4$. Node 5a (shallow) or 5b (deep) computes the dimensionless depth; Node 6 converts to metres or millimetres.
-
-**[📄 Download: The A4 Ballistic Pipeline — slide deck (PDF)](The_A4_Ballistic_Pipeline.pdf)** - A visual representation of the calculation
-
- **[📄Download The Theory Behind the Calculation (PDF)](TheoryBehindTheCalculation.pdf)** — 
-A visual walkthrough of the physics: from Buckingham Pi to cavity expansion to the final dimensionless equations.
 
 ---
 

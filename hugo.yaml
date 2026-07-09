@@ -58,6 +58,10 @@ menu:
       name: "Series E — Essays"
       url: /series-e/
       weight: 30
+    - identifier: explainer
+      name: "Explainer"
+      url: /explainer/
+      weight: 40
     - identifier: search
       name: Search
       url: /search/
