@@ -15,10 +15,13 @@ tool_ref: "/series-a/a4-penetration-depth/"
 
 The scene above is not a drawing: the projectile's rest position is found by integrating the
 equation of motion in the browser, using the same force law derived below — the two-zone model
-of Li & Chen (2003). What follows is where every symbol, constant, and equation in that solver
-comes from.
+of Li & Chen (2003).
 
----
+Two ways on from here:
+
+**[Run your own case → A4 tool](/series-a/a4-penetration-depth/)** — the full pipeline: inputs, intermediate values, output.
+
+Or keep reading for where every symbol, constant, and equation in that solver comes from. ↓
 
 # Physics of Concrete Penetration — Academy Course
 
@@ -1102,11 +1105,6 @@ Lesson 2 is the load-bearing structure — it produces the formulae. Lesson 1 is
 - Sliter GE (1980). *Assessment of empirical concrete impact formulas.* ASCE J Struct Div 106(ST5), 1023–1045.
 - Jones N (1997). *Structural Impact.* Cambridge University Press.
 
----
-
-## Try it on your own case
-
-The full pipeline — inputs, intermediate values, output — is in the **[A4 tool →](/series-a/a4-penetration-depth/)**
 ---
 
 <a id="appendix-nondimensionalisation"></a>
