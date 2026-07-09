@@ -1,7 +1,7 @@
 ---
 title: "How deep does it go? — the physics behind the concrete-penetration tool"
 date: 2026-07-07
-draft: true
+draft: false
 summary: "Play the two-zone penetration model, then read where every symbol and constant comes from. The on-ramp to the A4 tool."
 categories: ["explainer"]
 tags: ["impact engineering", "penetration", "dimensional analysis", "cavity expansion"]
