@@ -27,7 +27,85 @@ Now consider what a taller washer does. It makes the bolt longer. A longer bolt 
 Ignoring eccentricity — treating the bolt as if it only sees axial tension — produces a severely non-conservative estimate. The pipeline below quantifies exactly how much.
 
 ---
+## Symbols
 
+Every symbol in the pipeline, in the order it enters. Notation follows VDI 2230;
+units are those used in the notebook. Values in brackets are the verification
+case (M20×2.5, class 8.8, DN40 flange — Okorn 2021).
+
+### Inputs — geometry and material
+
+| Symbol | Meaning | Units | Note |
+|:--|:--|:--|:--|
+| $d$ | Nominal bolt diameter | mm | M20 → 20 |
+| $P$ | Thread pitch | mm | [2.5] |
+| $d_2$ | Pitch diameter | mm | [18.376] |
+| $d_3$ | Minor (root) diameter | mm | [16.933] |
+| $d_S$ | Mean stress diameter, $(d_2+d_3)/2$ | mm | [17.654] |
+| $A_S$ | Tensile stress area, $\tfrac{\pi}{4}d_S^2$ | mm² | [245] |
+| $W_S$ | Section modulus of the threaded section, $\tfrac{\pi}{32}d_S^3$ | mm³ | [540] |
+| $A_N,\,A_3$ | Nominal / minor-diameter areas | mm² | used in $\delta_S$ |
+| $E_S,\,E_P$ | Young's modulus — bolt / clamped parts | MPa | [210 000] |
+| $F_V$ | Bolt preload | N | [50 000] |
+| $F_A$ | Working (external) axial load per bolt | N | swept 6.84–54.74 kN |
+| $a$ | Eccentricity of the external load from the bolt axis | mm | [31] |
+| $s_{\mathrm{sym}}$ | Eccentricity of the preload resultant from the bolt axis | mm | [3.5] |
+| $n$ | Load introduction factor (VDI 2230 tables) | — | where/how $F_A$ enters the joint; [0.1 HW / 0.3 LW] |
+
+### Node 1 — bolt compliance
+
+| Symbol | Meaning | Units |
+|:--|:--|:--|
+| $\delta_S$ | Bolt resilience (compliance): the bolt as springs in series, plus VDI 2230 head ($0.4d$) and nut ($0.5d$) correction terms | mm/N |
+
+### Node 2 — clamped-parts compliance
+
+| Symbol | Meaning | Units |
+|:--|:--|:--|
+| $\delta_P$ | Clamped-parts resilience, axial (concentric) | mm/N |
+| $\delta_P^{*}$ | $\delta_P$ corrected for **preload** eccentricity $s_{\mathrm{sym}}$ | mm/N |
+| $\delta_P^{**}$ | $\delta_P$ corrected for **external-load** eccentricity $a$ | mm/N |
+
+### Node 3 — eccentric load factor
+
+| Symbol | Meaning | Units |
+|:--|:--|:--|
+| $\varphi^{*}_{en}$ | Eccentric load factor $= n\,\dfrac{\delta_P^{**}}{\delta_S+\delta_P^{*}}$ — fraction of $F_A$ that reaches the bolt as additional axial force | — |
+
+### Node 4 — additional bolt force
+
+| Symbol | Meaning | Units |
+|:--|:--|:--|
+| $F_{SA}$ | Additional bolt force $= \varphi^{*}_{en}\,F_A$ | N |
+
+### Node 5 — stress range
+
+| Symbol | Meaning | Units |
+|:--|:--|:--|
+| $\beta_S,\,\beta_P$ | Bending compliance of bolt / clamped parts | 1/(N·mm) |
+| $\beta_P/\beta_S$ | Bending compliance ratio — how much external bending moment reaches the bolt | — |
+| $\sigma_{SAt}$ | Tension stress component $= F_{SA}/A_S$ | MPa |
+| $\sigma^{*}_{SAb}$ | Bending stress component $= \dfrac{\beta_P}{\beta_S}\!\left(1-\dfrac{s_{\mathrm{sym}}}{a}\varphi^{*}_{en}\right)\dfrac{F_A\,a}{W_S}$ | MPa |
+| $\sigma_{abr}$ | Total additional stress range $= \sigma_{SAt}+\sigma^{*}_{SAb}$ (drives fatigue) | MPa |
+
+### Node 6 — fatigue life (Eurocode 3, detail 50)
+
+| Symbol | Meaning | Units |
+|:--|:--|:--|
+| $\sigma_D$ | Knee stress, slope change $m=3 \to m=5$ | MPa | [36.84] |
+| $\sigma_L$ | Cut-off (endurance limit); below it, $N_R=\infty$ | MPa | [20.23] |
+| $C_3,\,C_5$ | S-N curve constants for the two slopes | — |
+| $N_R$ | Fatigue life (cycles to failure) | cycles |
+
+### Configuration tags
+
+| Tag | Meaning |
+|:--|:--|
+| HW / LW | High washer / low washer (long / short bolt) |
+| HI / SI | Hard insert / soft insert between flanges |
+| MB | Modified bolt (thinned shank for strain-gauge fitting) |
+
+---
 ## Quick Example
 
 **Setup:** DN40 flange, M20×2.5 bolt (class 8.8), preload $F_V = 50$ kN, applied cyclic load $F_A = 27.37$ kN.
@@ -252,6 +330,7 @@ Sweeping $\delta_S$ from $0.5 \times 10^{-6}$ to $6.0 \times 10^{-6}$ mm/N at a 
 - It does not compute compliances from geometry — you supply $\delta_S$ and $\delta_P$ as inputs. VDI 2230 provides the formulae; the Okorn 2021 supplementary Excel implements them for standard flange configurations.
 - It does not cover bolt yielding, clamp loss, or self-loosening under transverse loads.
 - The fatigue criterion is Eurocode 3 detail category 50. If your bolt class or detail category differs, modify the S-N parameters in Cell 5.
+- **The analytical method has a known accuracy limit for structural flanges.** VDI 2230's analytical bending estimate greatly overexceeds FEM and experiment — by 11–47× in Okorn (2021, §5), depending on washer and insert. The method is only valid up to the point where the flange begins to spread, which under eccentric load happens early. It is reliable for **direction and relative comparison** (e.g. high vs low washer), **not for absolute fatigue life** on structural flanged connections. For those, the paper resorts to FEM. Use these numbers as a conservative screening estimate, not a life prediction.
 
 **Limitations:**
 - The model assumes elastic behaviour throughout. No plasticity, no gasket relaxation.
