@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>von Mises Truss Explorer — eng-tools.dev</title>
+<style>
+  :root {
+    --bg: #0a1628;
+    --bg-panel: #0f1f3a;
+    --bg-input: #162a4a;
+    --border: #1e3a5f;
+    --border-hi: #2a5a8f;
+    --text: #c8d6e5;
+    --text-dim: #6b7f99;
+    --text-bright: #e8f0fa;
+    --accent-linear: #4ecdc4;
+    --accent-mr: #ff6b6b;
+    --accent-point: #ffe66d;
+    --accent-w: #a29bfe;
+    --grid: #152240;
+    --grid-major: #1a2d50;
+    --ok: #6bcf7f;
+    --warn: #ffb454;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+  .container { max-width: 1180px; margin: 0 auto; padding: 24px 20px 40px; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
+  header h1 { font-family: ui-monospace, monospace; font-weight: 600; font-size: 19px; color: var(--text-bright); letter-spacing: -0.3px; }
+  header p { font-size: 12.5px; color: var(--text-dim); margin-top: 5px; font-family: ui-monospace, monospace; }
+  .layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+  .panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; padding: 18px; }
+  .panel + .panel { margin-top: 16px; }
+  .panel-title { font-family: ui-monospace, monospace; font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: 1.3px; color: var(--text-dim); margin-bottom: 14px; }
+  .control-group { margin-bottom: 16px; }
+  .control-label { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .control-label span:first-child { font-size: 12.5px; color: var(--text); }
+  .control-value { font-family: ui-monospace, monospace; font-size: 12.5px; font-weight: 500; color: var(--text-bright); background: var(--bg-input); padding: 2px 7px; border-radius: 3px; min-width: 66px; text-align: right; display: inline-block; }
+  input[type="range"] { -webkit-appearance: none; width: 100%; height: 4px; background: var(--bg-input); border-radius: 2px; outline: none; cursor: pointer; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 15px; height: 15px; border-radius: 50%; background: var(--accent-linear); border: 2px solid var(--bg); cursor: pointer; }
+  input[type="range"]::-moz-range-thumb { width: 15px; height: 15px; border-radius: 50%; background: var(--accent-linear); border: 2px solid var(--bg); cursor: pointer; }
+  #slider-w::-webkit-slider-thumb { background: var(--accent-w); }
+  .sub-note { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+  .toggle-row { display: flex; gap: 8px; }
+  .toggle-btn { flex: 1; font-family: ui-monospace, monospace; font-size: 11.5px; padding: 7px 6px; border-radius: 4px; border: 1px solid var(--border-hi); background: var(--bg-input); color: var(--text-dim); cursor: pointer; transition: all .15s; }
+  .toggle-btn.active-linear { color: #06201e; background: var(--accent-linear); border-color: var(--accent-linear); }
+  .toggle-btn.active-mr { color: #2a0a0a; background: var(--accent-mr); border-color: var(--accent-mr); }
+  .reset-btn { margin-top: 8px; width: 100%; font-family: ui-monospace, monospace; font-size: 11px; padding: 6px; border-radius: 4px; border: 1px dashed var(--border-hi); background: transparent; color: var(--text-dim); cursor: pointer; transition: all .15s; }
+  .reset-btn:hover { color: var(--text-bright); border-color: var(--accent-linear); }
+  hr.separator { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+  .const-table { width: 100%; border-collapse: collapse; font-family: ui-monospace, monospace; font-size: 11.5px; }
+  .const-table td { padding: 3px 0; color: var(--text); }
+  .const-table td:last-child { text-align: right; color: var(--text-bright); }
+  .const-table tr.grp td { padding-top: 9px; color: var(--text-dim); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+  canvas { width: 100%; display: block; background: var(--bg); border-radius: 4px; }
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 10px; padding: 0 4px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); }
+  .legend-dot { width: 16px; height: 3px; border-radius: 2px; }
+  .provenance { font-size: 11px; color: var(--text-dim); margin-top: 10px; padding: 8px 10px; background: var(--bg-input); border-radius: 4px; border-left: 2px solid var(--accent-mr); }
+  #selfcheck-badge { font-family: ui-monospace, monospace; font-size: 11.5px; padding: 3px 9px; border-radius: 3px; display: inline-block; }
+  #selfcheck-badge.pass { background: rgba(107,207,127,0.15); color: var(--ok); border: 1px solid var(--ok); }
+  #selfcheck-badge.fail { background: rgba(255,107,107,0.15); color: var(--accent-mr); border: 1px solid var(--accent-mr); }
+  footer { margin-top: 26px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 11.5px; color: var(--text-dim); }
+  footer a { color: var(--accent-linear); text-decoration: none; }
+  #warn-domain { font-size: 11.5px; color: var(--warn); margin-top: 8px; min-height: 15px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>von Mises Truss — Snap-Through Explorer</h1>
+    <p>Series E · E3 — reduced 0D model, recomputed live in JavaScript from the same equations as the Python solver</p>
+  </header>
+
+  <div class="layout">
+    <!-- Controls -->
+    <div>
+      <div class="panel">
+        <div class="panel-title">Geometric parameter</div>
+        <div class="control-group">
+          <div class="control-label"><span>H / B (shallowness)</span><span class="control-value mono" id="out-hb">0.700</span></div>
+          <input type="range" id="slider-hb" min="0.05" max="2.60" step="0.005" value="0.70">
+          <div class="sub-note" id="out-theta0">&theta;&#8320; = 35.0&deg;  ·  B = 149.05 mm  ·  H = 104.36 mm</div>
+          <button class="reset-btn" id="btn-reset-hb" type="button">Reset to H/B = 0.70</button>
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>w — current apex displacement</span><span class="control-value mono" id="out-w">0.0 mm</span></div>
+          <input type="range" id="slider-w" min="0" max="1" step="0.001" value="0">
+          <div class="sub-note">Moves the cursor along the curve and deforms the schematic below.</div>
+        </div>
+
+        <hr class="separator">
+        <div class="panel-title">Material (comparison)</div>
+        <div class="toggle-row">
+          <button class="toggle-btn active-linear" id="btn-linear">Linear</button>
+          <button class="toggle-btn active-mr" id="btn-mr">Mooney-Rivlin</button>
+        </div>
+
+        <hr class="separator">
+        <div class="panel-title">Measured constants (read-only)</div>
+        <table class="const-table">
+          <tr class="grp"><td colspan="2">Physical bar (fixed)</td></tr>
+          <tr><td>L0 (=L)</td><td id="c-L0"></td></tr>
+          <tr><td>Lr (per end)</td><td id="c-Lr"></td></tr>
+          <tr><td>Lm (deformable segment)</td><td id="c-Lm"></td></tr>
+          <tr><td>A0 (cross-section)</td><td id="c-A0"></td></tr>
+          <tr class="grp"><td colspan="2">Mooney-Rivlin (proxy)</td></tr>
+          <tr><td>a</td><td id="c-a"></td></tr>
+          <tr><td>b</td><td id="c-b"></td></tr>
+          <tr><td>c</td><td id="c-c"></td></tr>
+          <tr class="grp"><td colspan="2">Linear (comparator)</td></tr>
+          <tr><td>EA_eq = dN<sub>MR</sub>/d&lambda;|<sub>&lambda;=1</sub></td><td id="c-EA"></td></tr>
+        </table>
+        <div class="provenance">
+          Curves recomputed live. Constants a, b, c: surrogate Pelliciari et al. 2023
+          (same specimens/rig as Falope et al. 2021, not the original table —
+          see SOURCES.md in the solver).
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart + schematic -->
+    <div>
+      <div class="panel">
+        <div class="panel-title">P(w) — vertical mid-span load vs apex displacement</div>
+        <canvas id="chart" height="420"></canvas>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--accent-linear)"></div><span>Linear — N = EA(&lambda;-1)</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--accent-mr)"></div><span>Mooney-Rivlin (rubber)</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--text-dim);border-top:2px dashed var(--text-dim);height:0"></div><span>Unstable branch (dP/dw&lt;0)</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--accent-w)"></div><span>current w</span></div>
+        </div>
+        <div id="warn-domain"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Schematic — deformation of the vertical axis as w varies</div>
+        <canvas id="schematic" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <a href="https://eng-tools.dev">eng-tools.dev</a> — Engineering calculations, fully explained.
+    Model: MODEL_SPEC.md (solver <code>snap_vonmises.py</code>).
+    Live self-check (console + here): <span id="selfcheck-badge" class="mono">running…</span>
+  </footer>
+</div>
+
+<script>
+/* =====================================================================
+   PURE MODEL — mirrors MODEL_SPEC.md exactly. No DOM access in this
+   block, so it can be extracted and run headless under Node for the
+   self-check (see e3_selfcheck.mjs).
+   ===================================================================== */
+
+function barLength(w, B, H) { return Math.hypot(B, H - w); }
+function sinTheta(w, B, H) { return (H - w) / barLength(w, B, H); }
+function stretch(w, B, H, Lr, Lm) { return (barLength(w, B, H) - 2 * Lr) / Lm; }
+
+// MODEL_SPEC §1 — rigid end-fitting interpenetration guard.
+function domainOk(w, B, H, Lr, Lm, minFrac) {
+  if (minFrac === undefined) minFrac = 0.02;
+  return (barLength(w, B, H) - 2 * Lr) > minFrac * Lm;
+}
+
+// MODEL_SPEC §3 — linear elastic bar.
+function N_linear(lambda, EA) { return EA * (lambda - 1); }
+
+// MODEL_SPEC §4 — compressible Mooney-Rivlin (Ciarlet-Geymonat), closed form.
+function mrTransverseStretchSq(lambda, a, b, c) {
+  var lam2 = lambda * lambda;
+  var Aq = b + c * lam2;
+  var Bq = a + b * lam2;
+  var Cq = -(a + 2 * b + c);
+  var disc = Bq * Bq - 4 * Aq * Cq;
+  return (-Bq + Math.sqrt(disc)) / (2 * Aq);
+}
+function mrAxialNominalStress(lambda, a, b, c) {
+  var x = mrTransverseStretchSq(lambda, a, b, c);
+  var lam2 = lambda * lambda;
+  var I3 = x * x * lam2;
+  var dOmega_dI3 = c - (a + 2 * b + c) / I3;
+  var dI1 = 2 * lambda, dI2 = 4 * lambda * x, dI3 = 2 * x * x * lambda;
+  return a * dI1 + b * dI2 + dOmega_dI3 * dI3;
+}
+function N_mooneyRivlin(lambda, a, b, c, A0) {
+  return A0 * mrAxialNominalStress(lambda, a, b, c);
+}
+function tangentEA_MR(a, b, c, A0, h) {
+  if (h === undefined) h = 1e-6;
+  var Np = N_mooneyRivlin(1 + h, a, b, c, A0);
+  var Nm = N_mooneyRivlin(1 - h, a, b, c, A0);
+  return (Np - Nm) / (2 * h);
+}
+
+// MODEL_SPEC §2 — global 1-DOF equilibrium, P and w both positive downward.
+function Pfunc(w, geom, Nfun) {
+  var lam = stretch(w, geom.B, geom.H, geom.Lr, geom.Lm);
+  var N = Nfun(lam);
+  var s = sinTheta(w, geom.B, geom.H);
+  return -2 * N * s;
+}
+
+// Dense-grid trace + numerical dP/dw sign for stable/unstable branch labelling.
+function traceCurve(geom, Nfun, wMin, wMax, n) {
+  var pts = [];
+  for (var i = 0; i < n; i++) {
+    var w = wMin + (wMax - wMin) * i / (n - 1);
+    if (!domainOk(w, geom.B, geom.H, geom.Lr, geom.Lm)) continue;
+    pts.push({ w: w, P: Pfunc(w, geom, Nfun) });
+  }
+  for (var j = 0; j < pts.length; j++) {
+    var j0 = Math.max(0, j - 1), j1 = Math.min(pts.length - 1, j + 1);
+    var dw = pts[j1].w - pts[j0].w;
+    pts[j].slope = dw !== 0 ? (pts[j1].P - pts[j0].P) / dw : 0;
+    pts[j].stable = pts[j].slope > 0;
+  }
+  return pts;
+}
+
+function slopeAt(w, geom, Nfun) {
+  var h = Math.max(1e-6, Math.abs(w) * 1e-6);
+  return (Pfunc(w + h, geom, Nfun) - Pfunc(w - h, geom, Nfun)) / (2 * h);
+}
+
+// MODEL_SPEC §5 — limit points: sign changes of dP/dw, refined by bisection.
+function findLimitPoints(pts, geom, Nfun) {
+  var out = [];
+  for (var i = 0; i < pts.length - 1; i++) {
+    if ((pts[i].slope > 0) !== (pts[i + 1].slope > 0)) {
+      var wlo = pts[i].w, whi = pts[i + 1].w;
+      var slo = slopeAt(wlo, geom, Nfun);
+      for (var it = 0; it < 60; it++) {
+        var wmid = 0.5 * (wlo + whi);
+        var smid = slopeAt(wmid, geom, Nfun);
+        if ((smid > 0) === (slo > 0)) { wlo = wmid; slo = smid; } else { whi = wmid; }
+      }
+      var wstar = 0.5 * (wlo + whi);
+      out.push({ w: wstar, P: Pfunc(wstar, geom, Nfun) });
+    }
+  }
+  return out;
+}
+
+// Physical bar (fixed) — MODEL_SPEC §6, geometry+material proxy provenance in SOURCES.md.
+var PHYSICAL_BAR = {
+  L0: 182.0, Lr: 46.0, Lm: 90.0, A0: 205.0,
+  a: 310.0 / 1000.0, b: 461.0 / 1000.0, c: 48095.0 / 1000.0 // kPa -> MPa
+};
+
+function geometryFromHB(HB, L0) {
+  var theta0 = Math.atan(HB);
+  return { B: L0 * Math.cos(theta0), H: L0 * Math.sin(theta0), theta0Deg: theta0 * 180 / Math.PI };
+}
+
+// Expose the pure model for the headless Node self-check (harmless in-browser).
+var E3_MODEL = {
+  barLength: barLength, sinTheta: sinTheta, stretch: stretch, domainOk: domainOk,
+  N_linear: N_linear, mrTransverseStretchSq: mrTransverseStretchSq,
+  mrAxialNominalStress: mrAxialNominalStress, N_mooneyRivlin: N_mooneyRivlin,
+  tangentEA_MR: tangentEA_MR, Pfunc: Pfunc, traceCurve: traceCurve,
+  findLimitPoints: findLimitPoints, PHYSICAL_BAR: PHYSICAL_BAR, geometryFromHB: geometryFromHB
+};
+if (typeof globalThis !== 'undefined') { globalThis.__E3_MODEL__ = E3_MODEL; }
+
+/* =====================================================================
+   SELF-CHECK — same reference numbers as the Node headless script
+   (e3_selfcheck.mjs), sourced from output/snap_points.json and
+   output/gate1_validation.json of the Python solver. Runs on load,
+   prints explicit deltas to console (A4 style: printed, not asserted).
+   ===================================================================== */
+function runSelfCheck() {
+  var results = [];
+
+  // Case A: H/B = 0.70 (theta0 = 35 deg), Falope-proxy bar, both materials.
+  var geomA = geometryFromHB(0.7002075382097098, PHYSICAL_BAR.L0);
+  geomA.Lr = PHYSICAL_BAR.Lr; geomA.Lm = PHYSICAL_BAR.Lm;
+  var EA_eq = tangentEA_MR(PHYSICAL_BAR.a, PHYSICAL_BAR.b, PHYSICAL_BAR.c, PHYSICAL_BAR.A0);
+  var NfunLin = function (lam) { return N_linear(lam, EA_eq); };
+  var NfunMR = function (lam) { return N_mooneyRivlin(lam, PHYSICAL_BAR.a, PHYSICAL_BAR.b, PHYSICAL_BAR.c, PHYSICAL_BAR.A0); };
+
+  var ptsLin = traceCurve(geomA, NfunLin, -30, 250, 1200);
+  var limLin = findLimitPoints(ptsLin, geomA, NfunLin);
+  var upperLin = limLin.reduce(function (a, b) { return Math.abs(a.w) < Math.abs(b.w) ? a : b; });
+  var refLin = { w: 48.1638659779822, P: 168.10056591573988 };
+  var dwLin = Math.abs(upperLin.w - refLin.w) / Math.abs(refLin.w);
+  var dPLin = Math.abs(upperLin.P - refLin.P) / Math.abs(refLin.P);
+  results.push({ name: 'H/B=0.70 linear, upper limit point', got: upperLin, ref: refLin, dw: dwLin, dP: dPLin });
+
+  var ptsMR = traceCurve(geomA, NfunMR, -30, 250, 1200);
+  var limMR = findLimitPoints(ptsMR, geomA, NfunMR);
+  var upperMR = limMR.reduce(function (a, b) { return Math.abs(a.w) < Math.abs(b.w) ? a : b; });
+  var refMR = { w: 58.487610914152675, P: 290.04351139264827 };
+  var dwMR = Math.abs(upperMR.w - refMR.w) / Math.abs(refMR.w);
+  var dPMR = Math.abs(upperMR.P - refMR.P) / Math.abs(refMR.P);
+  results.push({ name: 'H/B=0.70 Mooney-Rivlin, upper limit point', got: upperMR, ref: refMR, dw: dwMR, dP: dPMR });
+
+  // Case B: Gate-1 academic geometry (Lr=0), closed form L_cr=(B^2 L0)^(1/3).
+  var geomB = { B: 1000.0, H: 200.0, Lr: 0.0, Lm: Math.hypot(1000.0, 200.0) };
+  var EA_B = 200000.0 * 100.0;
+  var NfunB = function (lam) { return N_linear(lam, EA_B); };
+  var ptsB = traceCurve(geomB, NfunB, -50, 600, 1200);
+  var limB = findLimitPoints(ptsB, geomB, NfunB);
+  var upperB = limB.reduce(function (a, b) { return Math.abs(a.w) < Math.abs(b.w) ? a : b; });
+  var refB = { w: 85.2855553115624, P: 59210.35201526134 };
+  var dwB = Math.abs(upperB.w - refB.w) / Math.abs(refB.w);
+  var dPB = Math.abs(upperB.P - refB.P) / Math.abs(refB.P);
+  results.push({ name: 'Gate-1 academic (Lr=0), upper limit point', got: upperB, ref: refB, dw: dwB, dP: dPB });
+
+  var maxDelta = 0;
+  console.log('=== E3 explorer self-check (JS vs snap_vonmises.py) ===');
+  results.forEach(function (r) {
+    maxDelta = Math.max(maxDelta, r.dw, r.dP);
+    console.log(
+      r.name + '\n  JS:  w=' + r.got.w.toFixed(5) + ' mm, P=' + r.got.P.toFixed(5) + ' N' +
+      '\n  ref: w=' + r.ref.w.toFixed(5) + ' mm, P=' + r.ref.P.toFixed(5) + ' N' +
+      '\n  delta_w=' + r.dw.toExponential(3) + '  delta_P=' + r.dP.toExponential(3)
+    );
+  });
+  var tol = 1e-3;
+  console.log('Max relative delta over all checks: ' + maxDelta.toExponential(3) + '  (tolerance ' + tol.toExponential(0) + ')');
+  console.log(maxDelta < tol ? 'SELF-CHECK PASS' : 'SELF-CHECK FAIL');
+  return { results: results, maxDelta: maxDelta, tol: tol, pass: maxDelta < tol };
+}
+
+/* =====================================================================
+   UI — DOM wiring only below this line. Guarded so the pure model
+   above stays importable/executable under Node with no `document`.
+   ===================================================================== */
+function initUI() {
+  var sliderHB = document.getElementById('slider-hb');
+  var sliderW = document.getElementById('slider-w');
+  var outHB = document.getElementById('out-hb');
+  var outTheta0 = document.getElementById('out-theta0');
+  var outW = document.getElementById('out-w');
+  var warnDomain = document.getElementById('warn-domain');
+  var btnResetHB = document.getElementById('btn-reset-hb');
+  var btnLinear = document.getElementById('btn-linear');
+  var btnMR = document.getElementById('btn-mr');
+  var chartCanvas = document.getElementById('chart');
+  var schematicCanvas = document.getElementById('schematic');
+
+  var DEFAULT_HB = 0.70;
+  var state = { showLinear: true, showMR: true, HB: DEFAULT_HB, w: 0 };
+
+  var EA_eq = tangentEA_MR(PHYSICAL_BAR.a, PHYSICAL_BAR.b, PHYSICAL_BAR.c, PHYSICAL_BAR.A0);
+  document.getElementById('c-L0').textContent = PHYSICAL_BAR.L0.toFixed(1) + ' mm';
+  document.getElementById('c-Lr').textContent = PHYSICAL_BAR.Lr.toFixed(1) + ' mm';
+  document.getElementById('c-Lm').textContent = PHYSICAL_BAR.Lm.toFixed(1) + ' mm';
+  document.getElementById('c-A0').textContent = PHYSICAL_BAR.A0.toFixed(1) + ' mm²';
+  document.getElementById('c-a').textContent = (PHYSICAL_BAR.a * 1000).toFixed(0) + ' kPa';
+  document.getElementById('c-b').textContent = (PHYSICAL_BAR.b * 1000).toFixed(0) + ' kPa';
+  document.getElementById('c-c').textContent = (PHYSICAL_BAR.c * 1000).toFixed(0) + ' kPa';
+  document.getElementById('c-EA').textContent = EA_eq.toFixed(1) + ' N';
+
+  function currentGeometry() {
+    var g = geometryFromHB(state.HB, PHYSICAL_BAR.L0);
+    g.Lr = PHYSICAL_BAR.Lr; g.Lm = PHYSICAL_BAR.Lm; g.L0 = PHYSICAL_BAR.L0;
+    return g;
+  }
+  function NfunLinear(lam) { return N_linear(lam, EA_eq); }
+  function NfunMR(lam) { return N_mooneyRivlin(lam, PHYSICAL_BAR.a, PHYSICAL_BAR.b, PHYSICAL_BAR.c, PHYSICAL_BAR.A0); }
+
+  function validWRange(geom) {
+    // Bar-length domain guard (MODEL_SPEC §1): l(w) > 2*Lr. Scan outward
+    // from w=0 in both directions until the guard fails, capped at a
+    // physically meaningful window around the two limit points (roughly
+    // [-0.6H, 2.6H], matching the Python solver's w_hat_limit=2.5) so the
+    // slider stays useful even when the rigid-end guard never triggers
+    // (e.g. in the tension direction, where l(w) grows without bound).
+    var capLo = -0.6 * geom.H, capHi = 2.6 * geom.H;
+    var refLen = geom.L0 || (geom.B + geom.H) || 1;
+    var wLo = 0, wHi = 0, step = Math.max(refLen * 0.02, 1);
+    while (domainOk(wHi + step, geom.B, geom.H, geom.Lr, geom.Lm) && wHi < capHi) wHi += step;
+    while (domainOk(wLo - step, geom.B, geom.H, geom.Lr, geom.Lm) && wLo > capLo) wLo -= step;
+    return { min: wLo, max: wHi };
+  }
+
+  function redraw() {
+    var geom = currentGeometry();
+    var range = validWRange(geom);
+    sliderW.min = range.min.toFixed(2);
+    sliderW.max = range.max.toFixed(2);
+    if (state.w < range.min) state.w = range.min;
+    if (state.w > range.max) state.w = range.max;
+    sliderW.value = state.w;
+
+    outHB.textContent = state.HB.toFixed(3);
+    outTheta0.textContent = 'θ₀ = ' + geom.theta0Deg.toFixed(1) + '°  ·  B = ' + geom.B.toFixed(2) +
+      ' mm  ·  H = ' + geom.H.toFixed(2) + ' mm';
+    outW.textContent = state.w.toFixed(2) + ' mm';
+
+    var curves = {};
+    var limitPts = {};
+    if (state.showLinear) {
+      curves.linear = traceCurve(geom, NfunLinear, range.min, range.max, 900);
+      limitPts.linear = findLimitPoints(curves.linear, geom, NfunLinear);
+    }
+    if (state.showMR) {
+      curves.mr = traceCurve(geom, NfunMR, range.min, range.max, 900);
+      limitPts.mr = findLimitPoints(curves.mr, geom, NfunMR);
+    }
+
+    var noFold = [];
+    if (state.showLinear && limitPts.linear.length === 0) noFold.push('linear');
+    if (state.showMR && limitPts.mr.length === 0) noFold.push('Mooney-Rivlin');
+    warnDomain.textContent = noFold.length
+      ? 'No snap within the admissible physical domain for: ' + noFold.join(', ') +
+        ' (monotonically increasing curve — a genuine result, not an error).'
+      : '';
+
+    drawChart(chartCanvas, curves, limitPts, geom, state);
+    drawSchematic(schematicCanvas, geom, state.w, range);
+  }
+
+  sliderHB.addEventListener('input', function () { state.HB = parseFloat(sliderHB.value); redraw(); });
+  btnResetHB.addEventListener('click', function () {
+    state.HB = DEFAULT_HB;
+    state.w = 0;
+    sliderHB.value = DEFAULT_HB;
+    redraw();
+  });
+  sliderW.addEventListener('input', function () { state.w = parseFloat(sliderW.value); redraw(); });
+  btnLinear.addEventListener('click', function () {
+    state.showLinear = !state.showLinear;
+    btnLinear.classList.toggle('active-linear', state.showLinear);
+    redraw();
+  });
+  btnMR.addEventListener('click', function () {
+    state.showMR = !state.showMR;
+    btnMR.classList.toggle('active-mr', state.showMR);
+    redraw();
+  });
+  window.addEventListener('resize', redraw);
+
+  redraw();
+
+  var sc = runSelfCheck();
+  var badge = document.getElementById('selfcheck-badge');
+  badge.textContent = (sc.pass ? 'PASS' : 'FAIL') + '  maxδ=' + sc.maxDelta.toExponential(2);
+  badge.classList.add(sc.pass ? 'pass' : 'fail');
+}
+
+function drawChart(canvas, curves, limitPts, geom, state) {
+  var dpr = window.devicePixelRatio || 1;
+  // clientWidth = content-box + padding, excludes border (no feedback with
+  // the explicit pixel width set below -- getBoundingClientRect().width
+  // would include the border and, combined with a fixed grid track, can
+  // compound into runaway growth across redraws).
+  var cssW = canvas.parentElement.clientWidth - 36, cssH = 420;
+  canvas.width = cssW * dpr; canvas.height = cssH * dpr;
+  canvas.style.width = cssW + 'px'; canvas.style.height = cssH + 'px';
+  var ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  var all = [].concat(state.showLinear ? curves.linear : [], state.showMR ? curves.mr : []);
+  if (all.length === 0) return;
+  var wMin = Math.min.apply(null, all.map(function (p) { return p.w; }));
+  var wMax = Math.max.apply(null, all.map(function (p) { return p.w; }));
+  var PMin = Math.min.apply(null, all.map(function (p) { return p.P; }).concat([0]));
+  var PMax = Math.max.apply(null, all.map(function (p) { return p.P; }).concat([0]));
+  var padP = 0.08 * (PMax - PMin || 1);
+  PMin -= padP; PMax += padP;
+
+  var mL = 62, mR = 16, mT = 14, mB = 34;
+  var plotW = cssW - mL - mR, plotH = cssH - mT - mB;
+  function X(w) { return mL + (w - wMin) / (wMax - wMin) * plotW; }
+  function Y(P) { return mT + (1 - (P - PMin) / (PMax - PMin)) * plotH; }
+
+  // grid
+  ctx.strokeStyle = getCss('--grid'); ctx.lineWidth = 1;
+  var nGridX = 8, nGridY = 6;
+  for (var i = 0; i <= nGridX; i++) {
+    var gx = mL + plotW * i / nGridX;
+    ctx.beginPath(); ctx.moveTo(gx, mT); ctx.lineTo(gx, mT + plotH); ctx.stroke();
+  }
+  for (var j = 0; j <= nGridY; j++) {
+    var gy = mT + plotH * j / nGridY;
+    ctx.beginPath(); ctx.moveTo(mL, gy); ctx.lineTo(mL + plotW, gy); ctx.stroke();
+  }
+  // zero line
+  if (PMin < 0 && PMax > 0) {
+    ctx.strokeStyle = getCss('--border-hi'); ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(mL, Y(0)); ctx.lineTo(mL + plotW, Y(0)); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // axes labels
+  ctx.fillStyle = getCss('--text-dim'); ctx.font = '11px ui-monospace,monospace';
+  ctx.textAlign = 'center';
+  for (i = 0; i <= nGridX; i++) {
+    var wv = wMin + (wMax - wMin) * i / nGridX;
+    ctx.fillText(wv.toFixed(0), mL + plotW * i / nGridX, cssH - 12);
+  }
+  ctx.textAlign = 'right';
+  for (j = 0; j <= nGridY; j++) {
+    var Pv = PMax - (PMax - PMin) * j / nGridY;
+    ctx.fillText(Pv.toFixed(0), mL - 8, mT + plotH * j / nGridY + 4);
+  }
+  ctx.save();
+  ctx.translate(14, mT + plotH / 2); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center'; ctx.fillText('P  [N]', 0, 0);
+  ctx.restore();
+  ctx.textAlign = 'center';
+  ctx.fillText('w  [mm]', mL + plotW / 2, cssH - 1);
+
+  function drawSeries(pts, color) {
+    if (!pts || pts.length === 0) return;
+    var segStart = 0;
+    for (var k = 1; k <= pts.length; k++) {
+      var brokeStable = (k === pts.length) || (pts[k].stable !== pts[segStart].stable);
+      if (brokeStable) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.2;
+        ctx.setLineDash(pts[segStart].stable ? [] : [6, 5]);
+        ctx.beginPath();
+        for (var m = segStart; m < k; m++) {
+          var px = X(pts[m].w), py = Y(pts[m].P);
+          if (m === segStart) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+        segStart = k;
+      }
+    }
+    ctx.setLineDash([]);
+  }
+  if (state.showLinear) drawSeries(curves.linear, getCss('--accent-linear'));
+  if (state.showMR) drawSeries(curves.mr, getCss('--accent-mr'));
+
+  function drawLimits(pts, color, label) {
+    (pts || []).forEach(function (p) {
+      var px = X(p.w), py = Y(p.P);
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(px, py, 4, 0, 2 * Math.PI); ctx.fill();
+      ctx.fillStyle = getCss('--text-bright'); ctx.font = '10.5px ui-monospace,monospace';
+      ctx.textAlign = px > mL + plotW * 0.7 ? 'right' : 'left';
+      ctx.fillText(label + ' ≈ ' + p.P.toFixed(0) + ' N', px + (ctx.textAlign === 'left' ? 8 : -8), py - 8);
+    });
+  }
+  if (state.showLinear) drawLimits(limitPts.linear, getCss('--accent-linear'), 'P_c lin');
+  if (state.showMR) drawLimits(limitPts.mr, getCss('--accent-mr'), 'P_c MR');
+
+  // current-w marker
+  if (state.w >= wMin && state.w <= wMax) {
+    var mx = X(state.w);
+    ctx.strokeStyle = getCss('--accent-w'); ctx.lineWidth = 1.4; ctx.setLineDash([2, 3]);
+    ctx.beginPath(); ctx.moveTo(mx, mT); ctx.lineTo(mx, mT + plotH); ctx.stroke();
+    ctx.setLineDash([]);
+    [state.showLinear && interpAt(curves.linear, state.w), state.showMR && interpAt(curves.mr, state.w)]
+      .forEach(function (P) {
+        if (P === false || P === null || P === undefined) return;
+        ctx.fillStyle = getCss('--accent-w');
+        ctx.beginPath(); ctx.arc(mx, Y(P), 4, 0, 2 * Math.PI); ctx.fill();
+      });
+  }
+}
+
+function interpAt(pts, w) {
+  if (!pts || pts.length < 2) return null;
+  if (w < pts[0].w || w > pts[pts.length - 1].w) return null;
+  for (var i = 0; i < pts.length - 1; i++) {
+    if (w >= pts[i].w && w <= pts[i + 1].w) {
+      var t = (w - pts[i].w) / (pts[i + 1].w - pts[i].w || 1);
+      return pts[i].P + t * (pts[i + 1].P - pts[i].P);
+    }
+  }
+  return null;
+}
+
+function drawSchematic(canvas, geom, w, range) {
+  var dpr = window.devicePixelRatio || 1;
+  var cssW = canvas.parentElement.clientWidth - 36, cssH = 220;
+  canvas.width = cssW * dpr; canvas.height = cssH * dpr;
+  canvas.style.width = cssW + 'px'; canvas.style.height = cssH + 'px';
+  var ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  var maxNodeAbove = Math.max(geom.H, Math.abs(geom.H - range.min), Math.abs(geom.H - range.max)) + geom.B * 0.15;
+  var scale = Math.min((cssW - 60) / (2.3 * geom.B), (cssH - 50) / (2.2 * maxNodeAbove));
+  var cx = cssW / 2, baseY = cssH * 0.60;
+
+  function toXY(x, y) { return [cx + x * scale, baseY - y * scale]; }
+
+  ctx.strokeStyle = getCss('--border-hi'); ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(20, baseY); ctx.lineTo(cssW - 20, baseY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  var nodeY = geom.H - w;
+  var pL = toXY(-geom.B, 0), pR = toXY(geom.B, 0), pC = toXY(0, nodeY);
+
+  ctx.strokeStyle = getCss('--accent-mr'); ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(pL[0], pL[1]); ctx.lineTo(pC[0], pC[1]); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pR[0], pR[1]); ctx.lineTo(pC[0], pC[1]); ctx.stroke();
+
+  [pL, pR].forEach(function (p) {
+    ctx.fillStyle = getCss('--text-dim');
+    ctx.beginPath(); ctx.arc(p[0], p[1], 5, 0, 2 * Math.PI); ctx.fill();
+  });
+  ctx.fillStyle = getCss('--accent-w');
+  ctx.beginPath(); ctx.arc(pC[0], pC[1], 6, 0, 2 * Math.PI); ctx.fill();
+
+  ctx.fillStyle = getCss('--text-dim'); ctx.font = '11px ui-monospace,monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('B = ' + geom.B.toFixed(1) + ' mm', cx, baseY + 18);
+  ctx.textAlign = 'left';
+  ctx.fillText('w = ' + w.toFixed(1) + ' mm', pC[0] + 12, pC[1] + 4);
+}
+
+function getCss(varName) {
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initUI);
+  } else {
+    initUI();
+  }
+}
+</script>
+</body>
+</html>
