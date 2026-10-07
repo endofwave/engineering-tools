@@ -58,6 +58,10 @@ menu:
       name: "Series E — Essays"
       url: /series-e/
       weight: 30
+    - identifier: core-ideas
+      name: "Core Ideas — Patents"
+      url: /core-ideas/
+      weight: 35
     - identifier: explainer
       name: "Explainer"
       url: /explainer/

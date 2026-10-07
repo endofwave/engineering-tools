@@ -2,8 +2,8 @@
 
 ## What this project is
 
-A Hugo static site published at https://endofwave.github.io/engineering-tools/
-with two series of content for mechanical engineers:
+A Hugo static site published at https://eng-tools.dev/ (GitHub Pages, custom domain in static/CNAME)
+with these sections for mechanical engineers:
 
 - **Series A — Papers → Tools:** calculation pipelines extracted from
   technical papers, with Python notebooks runnable on Google Colab.
@@ -65,6 +65,10 @@ C:\Progetti\engineering-tools\
 ├── themes/PaperMod/               ← Theme (git submodule)
 └── SKILL.md                       ← This file
 ```
+
+- **Series E — Essays:** engineering essays built on peer-reviewed papers, with explorers.
+- **Core Ideas — Patents:** one physical idea from a patent, in three pages and an explorer
+  (see the section "Core Ideas — How a case is published" below).
 
 ---
 
@@ -248,3 +252,28 @@ Common tasks to run periodically:
 - Do NOT add Python dependencies beyond numpy and matplotlib
   in notebooks
 - Do NOT change hugo.yaml markup settings without testing locally first
+
+---
+
+## Core Ideas — How a case is published
+
+Cases are produced in the Obsidian vault Vault_CoreIdea (method CoreIdea_method.md) and
+copied here by a script; the vault is the source, these files are generated.
+
+```
+content/core-ideas/_index.md                         section page
+content/core-ideas/cN-short-name/_index.md           landing (front matter: layout: ci-landing, landing: cN-short-name)
+content/core-ideas/cN-short-name/technical/index.md  the case, with numbers
+content/core-ideas/cN-short-name/math/index.md       the complete model
+layouts/core-ideas/ci-landing.html                   landing layout: wide main column (1180 px), PaperMod frame
+layouts/partials/coreidea/cN-short-name.html         landing body: guided tour (L1), reference and links (L2), other ways (L3)
+static/calculators/cN_..._explorer.html              explorer
+```
+
+- Generate with `python3 [IDEA]_publish.py <site root>` from the case's `lavoro/` folder, after
+  `[IDEA]_check.py` has passed. Do not edit the generated files by hand: edit the vault and regenerate.
+- The landing uses PaperMod colour variables, so it follows the light/dark switch; its CSS is
+  scoped under `.ci-landing`. Technical and math are ordinary PaperMod pages (`math: true`).
+- Obsidian width hints in the vault (`![alt|354](file.png)`) are kept: the script turns them into `<img ... width="354">`.
+- Build test: `hugo --destination <folder outside the repo>`; preview with `hugo server`.
+

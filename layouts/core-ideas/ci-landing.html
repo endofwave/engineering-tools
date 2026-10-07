@@ -1,0 +1,6 @@
+{{- define "main" }}
+<article class="post-single">
+  <header class="post-header">{{ partial "breadcrumbs.html" . }}</header>
+  {{ partial (printf "coreidea/%s.html" .Params.landing) . }}
+</article>
+{{- end }}

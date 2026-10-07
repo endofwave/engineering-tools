@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spring Link Toggle Clamp Explorer — eng-tools.dev</title>
+<style>
+  :root {
+    --bg: #0a1628; --bg-panel: #0f1f3a; --bg-input: #162a4a;
+    --border: #1e3a5f; --border-hi: #2a5a8f;
+    --text: #c8d6e5; --text-dim: #6b7f99; --text-bright: #e8f0fa;
+    --accent-linear: #4ecdc4; --accent-mr: #ff6b6b; --accent-point: #ffe66d; --accent-w: #a29bfe;
+    --grid: #152240; --grid-major: #1a2d50; --ok: #6bcf7f; --warn: #ffb454;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height: 1.5; min-height: 100vh; }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+  .container { max-width: 1180px; margin: 0 auto; padding: 24px 20px 40px; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
+  header h1 { font-family: ui-monospace, monospace; font-weight: 600; font-size: 19px; color: var(--text-bright); letter-spacing: -0.3px; }
+  header p { font-size: 12.5px; color: var(--text-dim); margin-top: 5px; font-family: ui-monospace, monospace; }
+  .layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+  .panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; padding: 18px; }
+  .panel + .panel { margin-top: 16px; }
+  .panel-title { font-family: ui-monospace, monospace; font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: 1.3px; color: var(--text-dim); margin-bottom: 14px; }
+  .control-group { margin-bottom: 16px; }
+  .control-label { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; gap: 8px; }
+  .control-label span:first-child { font-size: 12.5px; color: var(--text); }
+  .control-value { font-family: ui-monospace, monospace; font-size: 12px; font-weight: 500; color: var(--text-bright); background: var(--bg-input); padding: 2px 7px; border-radius: 3px; min-width: 66px; text-align: right; display: inline-block; white-space: nowrap; }
+  input[type="range"] { -webkit-appearance: none; width: 100%; height: 4px; background: var(--bg-input); border-radius: 2px; outline: none; cursor: pointer; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 15px; height: 15px; border-radius: 50%; background: var(--accent-linear); border: 2px solid var(--bg); cursor: pointer; }
+  input[type="range"]::-moz-range-thumb { width: 15px; height: 15px; border-radius: 50%; background: var(--accent-linear); border: 2px solid var(--bg); cursor: pointer; }
+  #pos::-webkit-slider-thumb { background: var(--accent-w); } #pos::-moz-range-thumb { background: var(--accent-w); }
+  .sub-note { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+  .toggle-row { display: flex; gap: 8px; margin-top: 8px; }
+  .toggle-btn { flex: 1; font-family: ui-monospace, monospace; font-size: 11.5px; padding: 7px 6px; border-radius: 4px; border: 1px solid var(--border-hi); background: var(--bg-input); color: var(--text-dim); cursor: pointer; transition: all .15s; }
+  .toggle-btn:hover { color: var(--text-bright); border-color: var(--accent-linear); }
+  .toggle-btn.active { color: #06201e; background: var(--accent-linear); border-color: var(--accent-linear); }
+  .toggle-btn.active-mr { color: #2a0a0a; background: var(--accent-mr); border-color: var(--accent-mr); }
+  hr.separator { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+  .const-table { width: 100%; border-collapse: collapse; font-family: ui-monospace, monospace; font-size: 11.5px; }
+  .const-table td { padding: 3px 0; color: var(--text); vertical-align: top; }
+  .const-table td:nth-child(2) { text-align: right; color: var(--text-bright); white-space: nowrap; padding-left: 8px; }
+  .const-table td.eq { text-align: right; color: var(--text-dim); white-space: nowrap; padding-left: 10px; width: 1%; }
+  .const-table tr.grp td { padding-top: 9px; color: var(--text-dim); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+  svg { display: block; width: 100%; height: auto; background: var(--bg); border-radius: 4px; }
+  svg text { fill: var(--text); font-family: ui-monospace, monospace; }
+  .axis text { fill: var(--text-dim); font-size: 10px; }
+  .state { font-size: 12.5px; margin-top: 10px; padding: 8px 10px; background: var(--bg-input); border-radius: 4px; border-left: 2px solid var(--accent-linear); color: var(--text); min-height: 2.6em; }
+  .state.bad { border-left-color: var(--accent-mr); color: var(--accent-mr); }
+  .provenance { font-size: 11px; color: var(--text-dim); margin-top: 10px; padding: 8px 10px; background: var(--bg-input); border-radius: 4px; border-left: 2px solid var(--warn); }
+  .two { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 16px; margin-top: 16px; }
+  @media (max-width: 860px) { .two { grid-template-columns: 1fr; } }
+  .two .panel + .panel { margin-top: 0; }
+  ul.cond { list-style: none; font-family: ui-monospace, monospace; font-size: 11.5px; }
+  ul.cond li { display: grid; grid-template-columns: 2.6em 1.4em 1fr; gap: 4px; padding: 4px 0; border-bottom: 1px solid var(--border); }
+  .ok { color: var(--ok); font-weight: 700; } .ko { color: var(--accent-mr); font-weight: 700; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; padding: 0 4px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-dim); }
+  .legend-dot { width: 16px; height: 3px; border-radius: 2px; }
+  #selfcheck-badge { font-family: ui-monospace, monospace; font-size: 11.5px; padding: 3px 9px; border-radius: 3px; display: inline-block; }
+  #selfcheck-badge.pass { background: rgba(107,207,127,0.15); color: var(--ok); border: 1px solid var(--ok); }
+  #selfcheck-badge.fail { background: rgba(255,107,107,0.15); color: var(--accent-mr); border: 1px solid var(--accent-mr); }
+  footer { margin-top: 26px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 11.5px; color: var(--text-dim); }
+  footer a { color: var(--accent-linear); text-decoration: none; }
+  details { font-size: 11.5px; } details summary { cursor: pointer; color: var(--text-dim); font-family: ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Spring Link Toggle Clamp — Simulation Explorer</h1>
+    <p>Patent series · US 5,676,357 — quasi-static model of document B, recomputed live in JavaScript from the same equations as the Python model</p>
+  </header>
+
+  <div class="layout">
+    <!-- Controls -->
+    <div>
+      <div class="panel">
+        <div class="panel-title">Stroke of the yoke</div>
+        <div class="control-group">
+          <div class="control-label"><span>x — yoke position</span><span class="control-value mono" id="xv"></span></div>
+          <input type="range" id="pos" min="0" max="1000" step="1" value="1000">
+          <div class="toggle-row">
+            <button class="toggle-btn" id="bClose" type="button">▶ Close</button>
+            <button class="toggle-btn" id="bStep" type="button">▷| Step</button>
+            <button class="toggle-btn" id="bOpen" type="button">◀ Open</button>
+          </div>
+          <div class="toggle-row"><button class="toggle-btn" id="bStop" type="button">■ Stop</button><button class="toggle-btn" id="bDir" type="button">step: closing</button></div>
+          <div class="sub-note">Step advances the yoke by 1/40 of the stroke in the direction shown.</div>
+        </div>
+
+        <hr class="separator">
+        <div class="panel-title">Workpiece and link</div>
+        <div class="control-group">
+          <div class="control-label"><span>t — workpiece thickness</span><span class="control-value mono" id="tv"></span></div>
+          <input type="range" id="tsl" min="0" max="1000" step="1" value="1000">
+          <div class="sub-note">from the thinnest (tₙ − T) to the thickest (tₙ)</div>
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>kₛ — spring link</span><span class="control-value mono" id="kv"></span></div>
+          <input type="range" id="ks" min="0" max="1000" step="1" value="437">
+          <div class="toggle-row"><button class="toggle-btn active" id="bSpring" type="button">Spring link</button><button class="toggle-btn" id="bRigid" type="button">Rigid link</button></div>
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>T — tolerance width</span><span class="control-value mono" id="Tv"></span></div>
+          <input type="range" id="T" min="0" max="300" step="5" value="140">
+          <div class="sub-note">EN 10029, 8–15 mm: T = 1.4 mm</div>
+        </div>
+        <div class="control-group">
+          <div class="panel-title" style="margin:10px 0 6px">Friction in the pins 52, 56</div>
+          <div class="toggle-row"><button class="toggle-btn active" id="bPinsOff" type="button">Off</button><button class="toggle-btn" id="bPinsOn" type="button">On</button></div>
+        </div>
+
+        <hr class="separator">
+        <div class="panel-title">Drawing</div>
+        <div class="control-group">
+          <div class="control-label"><span>E — exaggeration</span><span class="control-value mono" id="Ev"></span></div>
+          <input type="range" id="E" min="1" max="15" step="1" value="8">
+          <div class="sub-note">Drawing only: graphs and values are always true.</div>
+        </div>
+
+        <hr class="separator">
+        <div class="panel-title">Fixed data (read-only)</div>
+        <table class="const-table" id="fixed"></table>
+        <div class="provenance">All data assumed for the model except T (EN 10029); the patent declares no numbers. See document B, table of §6.2.</div>
+      </div>
+    </div>
+
+    <!-- Mechanism and graphs -->
+    <div>
+      <div class="panel">
+        <div class="panel-title">Mechanism — side view</div>
+        <svg id="mech" viewBox="0 115 640 235" role="img" aria-label="Side view of the clamp"></svg>
+        <div id="state" class="state"></div>
+        <div class="sub-note" id="exnote"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Along the stroke — closing travel to the left</div>
+        <svg id="g1" viewBox="0 0 520 150" role="img" aria-label="Shortening of the spring link along the stroke"></svg>
+        <svg id="g2" viewBox="0 0 520 150" role="img" aria-label="Forces on the clamp arm and on the pad"></svg>
+        <svg id="g3" viewBox="0 0 520 165" role="img" aria-label="Cylinder force along the stroke"></svg>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--accent-linear)"></div><span>current piece</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--accent-w);opacity:.6"></div><span>thinnest (dashed)</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--warn);opacity:.6"></div><span>thickest (dashed)</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--text-bright)"></div><span>current x</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two">
+    <div class="panel">
+      <div class="panel-title">At the current position</div>
+      <table class="const-table" id="vals"></table>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Conditions — document B, eq. (16)</div>
+      <ul class="cond" id="cond"></ul>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:16px">
+    <div class="panel-title">Domain — spring link stiffness × tolerance width (document B, figure 13)</div>
+    <svg id="dom" viewBox="0 0 520 300" style="max-width:640px" role="img" aria-label="Domain map with the current point"></svg>
+    <div class="sub-note">Green: all conditions hold, each point with its own setting, eq. (17). Dot: current choice.</div>
+    <details style="margin-top:10px"><summary>Reference cases (Python model)</summary><div id="reftab" style="margin-top:8px"></div></details>
+  </div>
+
+  <footer>
+    <a href="https://eng-tools.dev">eng-tools.dev</a> — Engineering calculations, fully explained.
+    Model: document B (US5676357_model.py). Live self-check against the Python reference cases: <span id="selfcheck-badge" class="mono">running…</span>
+  </footer>
+</div>
+
+<script>
+// MODEL-BEGIN
+const MP = {h0:40, l_r:30, a:100, k_c:40000, mu_g:0.10, E:206000, R:20, t_s:5, sig_adm:900,
+            mu:0.20, S:2, N_max:2000, p:0.6, D:50, d_rod:20, F_all:15000, mu_p:0.10, r_p:5.0};
+const lam = MP.l_r / MP.a;
+const rho = Math.atan(MP.mu_g);
+const P_ext = MP.p * Math.PI * MP.D * MP.D / 4;
+const P_ret = MP.p * Math.PI * (MP.D * MP.D - MP.d_rod * MP.d_rod) / 4;
+function stressFactor(R, t){ const ri = R - t/2, ro = R + t/2, rn = t/Math.log(ro/ri), ec = R - rn, ci = rn - ri;
+  return ci*t/(6*ec*ri) + t/(6*R); }                                   // eq. (7)
+const K_curv = stressFactor(MP.R, MP.t_s);
+const del_el = Math.PI * MP.sig_adm * MP.R * MP.R / (K_curv * MP.E * MP.t_s);   // eq. (6)
+function widthFor(ks){ return 6 * Math.PI * Math.pow(MP.R,3) * ks / (MP.E * Math.pow(MP.t_s,3)); }
+function nMin(Ft){ const Fz = Ft/2; return Math.max(MP.S*Fz, (MP.S*Ft/MP.mu + Fz)/2); }   // eq. (15)
+function pinAngle(L){ return 2 * MP.mu_p * MP.r_p / L; }
+function kSeries(ks){ return (ks === null) ? MP.k_c : 1/(1/ks + 1/MP.k_c); }      // eq. (8)
+function setting(ks, T, Ft, xs){                                                   // eq. (17)
+  const k = kSeries(ks), hThin = MP.h0 + lam*T, phsThin = Math.atan(xs/hThin);
+  return Math.hypot(xs,hThin) + nMin(Ft)/(lam*k*Math.cos(phsThin)); }
+function evaluate(ks, T, Ft, xs, Lman, n, pins){
+  n = n || 4001;
+  const Nmin = nMin(Ft);
+  const k = kSeries(ks);
+  const hThick = MP.h0, hThin = MP.h0 + lam*T;
+  const L = (Lman === null || Lman === undefined) ? setting(ks, T, Ft, xs) : Lman;
+  const out = {k:k, L:L, N_min:Nmin};
+  for (const [name,h] of [["thin",hThin],["thick",hThick]]){
+    const phs = Math.atan(xs/h), ds = Math.hypot(xs,h), dls = L - ds;
+    out["delta_s_"+name] = dls;
+    out["N_"+name] = lam*k*Math.max(dls,0)*Math.cos(phs);
+  }
+  const h = hThick, e = L - h;
+  out.e_thick = e;
+  const beta = pins ? pinAngle(L) : 0;
+  const phi0 = Math.acos(Math.min(h/L,1)), phs = Math.atan(xs/h);
+  let pc = -Infinity, po = -Infinity;
+  for (let i=0;i<n;i++){
+    const phi = -phi0 + (phs + phi0)*i/(n-1);
+    const F = k*Math.max(0, L - h/Math.cos(phi));
+    const c = F*Math.sin(rho + beta - phi)/Math.cos(rho), o = F*Math.sin(phi + rho + beta)/Math.cos(rho);
+    if (c > pc) pc = c; if (o > po) po = o;
+  }
+  out.F_peak = k*e; out.P_close = pc; out.P_open = po;
+  out.spring_defl = (ks === null) ? 0 : k*e/ks;
+  out.C1 = out.N_thin >= Nmin - 1e-6; out.C2 = out.N_thick <= MP.N_max;
+  out.C3 = out.P_close <= P_ext; out.C4 = out.P_open <= P_ret;
+  out.C5 = out.spring_defl <= del_el; out.D1 = out.F_peak <= MP.F_all;
+  out.ok = out.C1 && out.C2 && out.C3 && out.C4 && out.C5 && out.D1;
+  return out;
+}
+function strokeAt(ks, T, tRel, x, Ft, xs, pins){                                   // quantities at yoke position x (mm)
+  const k = kSeries(ks), L = setting(ks, T, Ft, xs), h = MP.h0 + lam*tRel;
+  const phi = Math.atan(x/h), delta = Math.max(0, L - h/Math.cos(phi));            // eq. (2), (3)
+  const F = k*delta, beta = pins ? pinAngle(L) : 0;                                // eq. (8)
+  return {phi:phi, h:h, L:L, k:k, delta:delta, F:F, N:lam*F*Math.cos(phi),           // eq. (12)
+          P_close:F*Math.sin(rho + beta - phi)/Math.cos(rho), P_open:F*Math.sin(phi + rho + beta)/Math.cos(rho)};   // eq. (10)
+}
+// MODEL-END
+
+const REF = [{"k_s": null, "T": 0.5, "F_t": 150.0, "x_s": 2.0, "N_thin": 787.5, "N_thick": 2583.0123, "P_close": 1306.7218, "P_open": 1306.7218, "spring_defl": 0.0, "F_peak": 10619.5483, "C1": true, "C2": false, "C3": false, "C4": false, "C5": true, "D1": true}, {"k_s": 3000.0, "T": 0.5, "F_t": 150.0, "x_s": 2.0, "N_thin": 787.5, "N_thick": 912.7615, "P_close": 524.5766, "P_open": 456.3807, "spring_defl": 1.0619, "F_peak": 3185.7869, "C1": true, "C2": true, "C3": true, "C4": true, "C5": false, "D1": true}, {"k_s": 5000.0, "T": 0.5, "F_t": 150.0, "x_s": 2.0, "N_thin": 787.5, "N_thick": 986.9949, "P_close": 529.9999, "P_open": 493.4974, "spring_defl": 0.7032, "F_peak": 3516.1763, "C1": true, "C2": true, "C3": true, "C4": true, "C5": true, "D1": true}, {"k_s": 10000.0, "T": 0.5, "F_t": 150.0, "x_s": 2.0, "N_thin": 787.5, "N_thick": 1146.5966, "P_close": 584.7596, "P_open": 573.2983, "spring_defl": 0.4227, "F_peak": 4226.5135, "C1": true, "C2": true, "C3": true, "C4": true, "C5": true, "D1": true}, {"k_s": null, "T": 1.4, "F_t": 150.0, "x_s": 2.0, "N_thin": 787.5, "N_thick": 5814.9763, "P_close": 2969.1837, "P_open": 2907.4881, "spring_defl": 0.0, "F_peak": 21406.2197, "C1": true, "C2": false, "C3": false, "C4": false, "C5": true, "D1": false}, {"k_s": 3000.0, "T": 1.4, "F_t": 150.0, "x_s": 2.0, "N_thin": 787.5, "N_thick": 1138.2353, "P_close": 685.486, "P_open": 569.1176, "spring_defl": 1.3128, "F_peak": 3938.305, "C1": true, "C2": true, "C3": true, "C4": true, "C5": false, "D1": true}, {"k_s": 5000.0, "T": 1.4, "F_t": 150.0, "x_s": 2.0, "N_thin": 787.5, "N_thick": 1346.0904, "P_close": 762.1149, "P_open": 673.0452, "spring_defl": 0.9429, "F_peak": 4714.6568, "C1": true, "C2": true, "C3": true, "C4": true, "C5": true, "D1": true}, {"k_s": 10000.0, "T": 1.4, "F_t": 150.0, "x_s": 2.0, "N_thin": 787.5, "N_thick": 1792.979, "P_close": 964.1327, "P_open": 896.4895, "spring_defl": 0.6384, "F_peak": 6383.8131, "C1": true, "C2": true, "C3": true, "C4": true, "C5": true, "D1": true}, {"k_s": null, "T": 2.0, "F_t": 150.0, "x_s": 2.0, "N_thin": 787.5, "N_thick": 7969.6484, "P_close": 4213.9751, "P_open": 3984.8242, "spring_defl": 0.0, "F_peak": 28597.4325, "C1": true, "C2": false, "C3": false, "C4": false, "C5": true, "D1": false}, {"k_s": 3000.0, "T": 2.0, "F_t": 150.0, "x_s": 2.0, "N_thin": 787.5, "N_thick": 1288.5533, "P_close": 798.5095, "P_open": 644.2767, "spring_defl": 1.48, "F_peak": 4439.9912, "C1": true, "C2": true, "C3": true, "C4": true, "C5": false, "D1": true}, {"k_s": 5000.0, "T": 2.0, "F_t": 150.0, "x_s": 2.0, "N_thin": 787.5, "N_thick": 1585.4909, "P_close": 927.5171, "P_open": 792.7454, "spring_defl": 1.1027, "F_peak": 5513.6552, "C1": true, "C2": true, "C3": true, "C4": true, "C5": false, "D1": true}, {"k_s": 10000.0, "T": 2.0, "F_t": 150.0, "x_s": 2.0, "N_thin": 787.5, "N_thick": 2223.9066, "P_close": 1239.2984, "P_open": 1111.9533, "spring_defl": 0.7822, "F_peak": 7822.0329, "C1": true, "C2": false, "C3": false, "C4": false, "C5": true, "D1": true}];
+const $ = id => document.getElementById(id);
+const FT = 150, XS = 2;
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, parent, text){ const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]); if (text !== undefined) e.textContent = text; if (parent) parent.appendChild(e); return e; }
+function clear(s){ while (s.firstChild) s.removeChild(s.firstChild); }
+const fmt = (v, d) => (Math.round(v*Math.pow(10,d))/Math.pow(10,d)).toFixed(d).replace("-", "−");
+
+// ---------- state ----------
+const st = {u:1, tRel:0, ks:5000, rigid:false, T:1.4, E:8, pins:false, anim:null, stuck:null};
+function ksFromSlider(v){ return 1000*Math.pow(10, Math.log10(1) + v/1000*Math.log10(40)); }
+function sliderFromKs(k){ return Math.round(1000*Math.log10(k/1000)/Math.log10(40)); }
+function ksNow(){ return st.rigid ? null : st.ks; }
+function stroke(){ // x range: from retracted (arm lifted) to the yoke stop
+  const L = setting(ksNow(), st.T, FT, XS), hThin = MP.h0 + lam*st.T;
+  const x0thin = -Math.sqrt(L*L - hThin*hThin);
+  return {L:L, xa:x0thin - 6, xb:XS};
+}
+function xNow(){ const s = stroke(); return s.xa + st.u*(s.xb - s.xa); }
+function contactX(tRel, L){ const h = MP.h0 + lam*tRel; return -Math.sqrt(Math.max(L*L - h*h, 0)); }
+
+// ---------- drawing geometry (display model, exaggeration E) ----------
+// heights and shortenings are multiplied by E; positions along the tracks by sqrt(E): the drawing stays a closed linkage
+const SC = 2.25, OX = 286, OY = 300;          // mm -> px, origin = foot of the dead centre on the line of pin 52
+function P2(X, Y){ return [OX + SC*X, OY - SC*Y]; }
+function geometry(x){
+  const E = st.E, s = stroke(), L = s.L, h0 = MP.h0, lr = MP.l_r, a = MP.a;
+  const Ld = h0 + E*(L - h0);
+  const thPiece = Math.asin(Math.min(E*st.tRel/a, 0.9));           // arm angle on the piece (pad down = positive)
+  const hd = h0 + E*lam*st.tRel, x0 = contactX(st.tRel, L), x0d = -Math.sqrt(Math.max(Ld*Ld - hd*hd, 0));
+  const xd = x >= x0 ? x*(x0d/x0) : x0d + (x - x0);                 // loaded stretch scaled, free stretch true
+  const X52 = lr - xd;                                              // closing travel to the left
+  const piv = [0, h0];
+  const p56 = th => [piv[0] + lr*Math.cos(th), piv[1] + lr*Math.sin(th)];
+  const dist = th => { const q = p56(th); return Math.hypot(q[0] - X52, q[1]); };
+  let th = thPiece, onPiece = true;
+  if (dist(thPiece) > Ld){                                           // link not compressed: arm free, link at free length
+    onPiece = false; let lo = -1.2, hi = thPiece;                    // pad lifted: smaller angle
+    for (let i=0;i<60;i++){ const m = (lo+hi)/2; if (dist(m) > Ld) hi = m; else lo = m; }
+    th = (lo+hi)/2;
+  }
+  const q56 = p56(th), chord = Math.hypot(q56[0] - X52, q56[1]);
+  const pad = [piv[0] - a*Math.cos(th), piv[1] - a*Math.sin(th)];
+  return {x0:x0, x0d:x0d, E:E, Ld:Ld, th:th, thPiece:thPiece, onPiece:onPiece, X52:X52, piv:piv, p56:q56, pad:pad, chord:chord,
+          top: h0 - a*Math.sin(thPiece)};
+}
+function cShape(A, B, Ld){   // inextensible arc of length pi*Ld/2 through A and B, bulging toward +X (cylinder side)
+  const d = Math.hypot(B[0]-A[0], B[1]-A[1]), S = Math.PI*Ld/2;
+  let lo = Math.PI/2, hi = Math.PI - 1e-4;           // solve alpha/sin(alpha) = S/d
+  const target = S/Math.max(d,1e-6);
+  if (target <= Math.PI/2) { lo = hi = Math.PI/2; }
+  for (let i=0;i<60;i++){ const m=(lo+hi)/2; if (m/Math.sin(m) < target) lo = m; else hi = m; }
+  const al = (lo+hi)/2, r = d/(2*Math.sin(al));
+  const mx = (A[0]+B[0])/2, my = (A[1]+B[1])/2, ux = (B[0]-A[0])/d, uy = (B[1]-A[1])/d;
+  let nx = uy, ny = -ux; if (nx < 0){ nx = -nx; ny = -ny; }       // normal toward +X
+  const off = -r*Math.cos(al);                                    // centre on the bulge side (alpha > pi/2)
+  const cx = mx + nx*off, cy = my + ny*off;
+  const a0 = Math.atan2(A[1]-cy, A[0]-cx), a1 = Math.atan2(B[1]-cy, B[0]-cx);
+  const pts = []; let da = a1 - a0;
+  const mid = Math.atan2(my + nx*0 - cy + ny*r, 0);              // pick the long way round (through the bulge)
+  const bulge = [mx + nx*(off + r), my + ny*(off + r)];
+  const ab = Math.atan2(bulge[1]-cy, bulge[0]-cx);
+  const norm = t => { while (t < 0) t += 2*Math.PI; while (t >= 2*Math.PI) t -= 2*Math.PI; return t; };
+  let span = norm(a1 - a0); if (norm(ab - a0) > span) span = span - 2*Math.PI;
+  for (let i=0;i<=40;i++){ const t = a0 + span*i/40; pts.push([cx + r*Math.cos(t), cy + r*Math.sin(t)]); }
+  return pts;
+}
+
+function drawMech(x, q){
+  const s = $("mech"); clear(s); const g = geometry(x);
+  // fixture support and workpiece
+  const sup = P2(-MP.a - 26, 8), sup2 = P2(-MP.a + 18, -4);
+  el("rect", {x:sup[0], y:sup[1], width:sup2[0]-sup[0], height:sup2[1]-sup[1], fill:"#1a2d50", stroke:"#2a5a8f"}, s);
+  el("text", {x:(sup[0]+sup2[0])/2, y:sup2[1]-6, "text-anchor":"middle", "font-size":11, fill:"#6b7f99"}, s, "fixture support");
+  const tp = P2(-MP.a - 20, g.top), bt = P2(-MP.a + 14, 8);
+  el("rect", {x:tp[0], y:tp[1], width:bt[0]-tp[0], height:bt[1]-tp[1], fill:"#8c7a4f", stroke:"#b7a57a"}, s);
+  el("text", {x:(tp[0]+bt[0])/2, y:(tp[1]+bt[1])/2+4, "text-anchor":"middle", "font-size":11}, s, "workpiece 40");
+  // frame outline and tracks
+  const f1 = P2(-14, 62), f2 = P2(70, -9);
+  el("rect", {x:f1[0], y:f1[1], width:f2[0]-f1[0], height:f2[1]-f1[1], fill:"none", stroke:"#2a5a8f", "stroke-width":1.2}, s);
+  el("text", {x:f2[0]-4, y:f1[1]+12, "text-anchor":"end", "font-size":10, fill:"#6b7f99"}, s, "frame 12");
+  for (const yy of [-5.5, 5.5]){ const a1 = P2(-10, yy), a2 = P2(68, yy); el("line", {x1:a1[0], y1:a1[1], x2:a2[0], y2:a2[1], stroke:"#1e3a5f"}, s); }
+  const tl = P2(-12, -8); el("text", {x:tl[0], y:tl[1]+2, "text-anchor":"start", "font-size":9, fill:"#6b7f99"}, s, "tracks 32, 34");
+  // yoke stop
+  const xsd = XS*(g.x0d/g.x0), ys = P2(MP.l_r - xsd - 3.5, 7), ys2 = P2(MP.l_r - xsd - 3.5, -7);
+  el("line", {x1:ys[0], y1:ys[1], x2:ys2[0], y2:ys2[1], stroke:"#e8f0fa", "stroke-width":3}, s);
+  el("text", {x:ys[0]-3, y:ys[1]-3, "text-anchor":"end", "font-size":9, fill:"#6b7f99"}, s, "yoke stop");
+  // yoke and cylinder
+  const y1 = P2(g.X52 - 3, 5), y2 = P2(g.X52 + 34, -5);
+  el("rect", {x:y1[0], y:y1[1], width:y2[0]-y1[0], height:y2[1]-y1[1], fill:"#24406a", stroke:"#2a5a8f"}, s);
+  el("text", {x:y2[0]-4, y:(y1[1]+y2[1])/2+4, "text-anchor":"end", "font-size":10}, s, "yoke 30");
+  const r1 = P2(g.X52 + 34, 1.8), r2 = P2(92, -1.8);
+  el("rect", {x:r1[0], y:r1[1], width:Math.max(r2[0]-r1[0],0), height:r2[1]-r1[1], fill:"#1e3a5f", stroke:"#2a5a8f"}, s);
+  const c1 = P2(92, 11), c2 = P2(128, -11);
+  el("rect", {x:c1[0], y:c1[1], width:c2[0]-c1[0], height:c2[1]-c1[1], fill:"#162a4a", stroke:"#2a5a8f"}, s);
+  el("text", {x:(c1[0]+c2[0])/2, y:c1[1]-5, "text-anchor":"middle", "font-size":10, fill:"#6b7f99"}, s, "cylinder 20");
+  // clamp arm 14 with rear lever 36
+  const pd = P2(g.pad[0], g.pad[1]), pv = P2(g.piv[0], g.piv[1]), p6 = P2(g.p56[0], g.p56[1]);
+  el("line", {x1:pd[0], y1:pd[1], x2:p6[0], y2:p6[1], stroke:"#ffb454", "stroke-width":7, "stroke-linecap":"round"}, s);
+  const pdp = P2(g.pad[0] - 4, g.pad[1]), pdq = P2(g.pad[0] + 4, g.pad[1] - 0);
+  el("rect", {x:pdp[0], y:pdp[1]-1, width:pdq[0]-pdp[0], height:7, fill:"#2a5a8f"}, s);
+  el("text", {x:(pd[0]+pv[0])/2, y:Math.min(pd[1],pv[1])-10, "text-anchor":"middle", "font-size":11, fill:"#ffb454"}, s, "clamp arm 14");
+  el("polygon", {points:`${pv[0]-9},${pv[1]+16} ${pv[0]+9},${pv[1]+16} ${pv[0]},${pv[1]}`, fill:"#6b7f99"}, s);
+  el("circle", {cx:pv[0], cy:pv[1], r:4.5, fill:"#e8f0fa"}, s);
+  el("text", {x:pv[0], y:pv[1]+28, "text-anchor":"middle", "font-size":9.5}, s, "arm pivot 16");
+  // spring link (or rigid link)
+  const p2 = P2(g.X52, 0);
+  if (st.rigid){
+    el("line", {x1:p6[0], y1:p6[1], x2:p2[0], y2:p2[1], stroke:"#6b7f99", "stroke-width":6, "stroke-linecap":"round"}, s);
+  } else {
+    const pts = cShape(g.p56, [g.X52, 0], g.Ld).map(p => P2(p[0], p[1]));
+    el("polyline", {points:pts.map(p => p.join(",")).join(" "), fill:"none", stroke:"#4ecdc4", "stroke-width":6, "stroke-linecap":"round"}, s);
+    const lab = P2(g.p56[0] + 30, g.p56[1] + 4); el("text", {x:lab[0], y:lab[1], "font-size":10.5, fill:"#4ecdc4"}, s, "spring link 48, 50");
+  }
+  for (const [P, lab, dx] of [[p6, "56", 7], [p2, "52", 7]]){
+    el("circle", {cx:P[0], cy:P[1], r:5, fill:"#0a1628", stroke:"#ff6b6b", "stroke-width":2}, s);
+    el("text", {x:P[0]+dx, y:P[1]-7, "font-size":10, fill:"#ff6b6b"}, s, lab);
+  }
+  // forces (true values, arrow length scaled to the largest of the case)
+  const sc = q.Fscale;
+  if (q.N > 1){ const L = 14 + 46*q.N/sc; el("line", {x1:pd[0], y1:pd[1]-L-6, x2:pd[0], y2:pd[1]-6, stroke:"#6bcf7f", "stroke-width":3, "marker-end":"url(#ah)"}, s);
+    el("text", {x:pd[0]+6, y:pd[1]-L-2, "font-size":11, fill:"#6bcf7f"}, s, "N"); }
+  if (q.F > 1){ const ux = (p6[0]-p2[0]), uy = (p6[1]-p2[1]), n = Math.hypot(ux,uy), L = 14 + 46*q.F/sc;
+    el("line", {x1:p6[0], y1:p6[1], x2:p6[0]+ux/n*L, y2:p6[1]+uy/n*L, stroke:"#4ecdc4", "stroke-width":3, "marker-end":"url(#ah)"}, s);
+    el("text", {x:p6[0]+ux/n*L+4, y:p6[1]+uy/n*L, "font-size":11, fill:"#4ecdc4"}, s, "F"); }
+  if (Math.abs(q.P) > 1){ const L = 14 + 46*Math.abs(q.P)/sc, dir = q.P > 0 ? -1 : 1, yb = P2(0,-11)[1];
+    el("line", {x1:y2[0], y1:yb, x2:y2[0]+dir*L, y2:yb, stroke:"#a29bfe", "stroke-width":3, "marker-end":"url(#ah)"}, s);
+    el("text", {x:y2[0]+dir*L, y:yb+13, "font-size":11, fill:"#a29bfe", "text-anchor":"middle"}, s, q.P > 0 ? "thrust" : "pull"); }
+  const defs = el("defs", {}, s); const m = el("marker", {id:"ah", viewBox:"0 0 10 10", refX:8, refY:5, markerWidth:5, markerHeight:5, orient:"auto-start-reverse"}, defs);
+  el("path", {d:"M0,0 L10,5 L0,10 z", fill:"context-stroke"}, m);
+  $("exnote").textContent = g.E === 1 ? "Drawing to scale: the shortening of the spring link (about 1 mm) and the thickness differences are too small to see."
+    : `Drawing exaggerated: shortening of the spring link and thickness differences × ${g.E}, loaded stretch of the stroke × ${fmt(g.x0d/g.x0,1)}. Graphs and values are true.`;
+}
+
+// ---------- graphs ----------
+function plot(svgId, series, opt){
+  const s = $(svgId); clear(s);
+  const W = 520, H = opt.h || 150, ml = 52, mr = 10, mt = 18, mb = opt.xlabel ? 34 : 20;
+  const st0 = stroke(), xa = st0.xa, xb = st0.xb;
+  const X = v => ml + (W-ml-mr)*(xb - v)/(xb - xa);              // closing travel to the left, as in the drawing
+  let ymin = opt.ymin !== undefined ? opt.ymin : 0, ymax = opt.ymax;
+  const Y = v => mt + (H-mt-mb)*(1 - (v - ymin)/(ymax - ymin));
+  el("text", {x:ml, y:12, "font-size":10, fill:"#e8f0fa"}, s, opt.title);
+  const ax = el("g", {class:"axis"}, s);
+  el("line", {x1:ml, y1:mt, x2:ml, y2:H-mb, stroke:"#2a5a8f"}, ax); el("line", {x1:ml, y1:H-mb, x2:W-mr, y2:H-mb, stroke:"#2a5a8f"}, ax);
+  for (let i=0;i<=4;i++){ const v = ymin + (ymax-ymin)*i/4, y = Y(v);
+    el("line", {x1:ml-3, y1:y, x2:W-mr, y2:y, stroke:"#152240"}, ax); el("text", {x:ml-5, y:y+3, "text-anchor":"end"}, ax, opt.yfmt(v)); }
+  for (const xv of [xb, 0, contactX(st.tRel, st0.L), xa]){ const xx = X(xv);
+    el("line", {x1:xx, y1:mt, x2:xx, y2:H-mb, stroke:"#1a2d50", "stroke-dasharray":"3,3"}, ax); }
+  const tk = [[xb,"stop"],[0,"dead centre"],[contactX(st.tRel, st0.L),"contact"]];
+  if (opt.xlabel){ const anc = {stop:"end", "dead centre":"start", contact:"middle"}; for (const [xv,lab] of tk) el("text", {x:X(xv)+(lab==="stop"?2:(lab==="dead centre"?-2:0)), y:H-mb+12, "text-anchor":anc[lab]}, ax, lab);
+    el("text", {x:(ml+W-mr)/2, y:H-4, "text-anchor":"middle"}, ax, "yoke position x (mm) — closing travel to the left"); }
+  for (const b of (opt.bands || [])) el("rect", {x:ml, y:Y(b[1]), width:W-ml-mr, height:Y(b[0])-Y(b[1]), fill:b[2], opacity:0.35}, s);
+  for (const hl of (opt.hlines || [])){ el("line", {x1:ml, y1:Y(hl[0]), x2:W-mr, y2:Y(hl[0]), stroke:hl[1], "stroke-dasharray":"5,3"}, s);
+    el("text", {x:W-mr-2, y:Y(hl[0])-3, "text-anchor":"end", "font-size":9, fill:hl[1]}, s, hl[2]); }
+  for (const se of series){ el("polyline", {points:se.pts.map(p => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(" "),
+      fill:"none", stroke:se.color, "stroke-width":se.w || 2, "stroke-dasharray":se.dash || "", opacity:se.op || 1}, s);
+    if (se.label) el("text", {x:X(xa)-4, y:Y(se.ly)-4, "font-size":9.5, fill:se.color, "text-anchor":"end"}, s, se.label); }
+  const xn = xNow(); el("line", {x1:X(xn), y1:mt, x2:X(xn), y2:H-mb, stroke:"#e8f0fa", "stroke-width":1}, s);
+  for (const dot of (opt.dots || [])) el("circle", {cx:X(xn), cy:Y(dot[0]), r:3.5, fill:dot[1]}, s);
+}
+
+function curves(tRel){
+  const s = stroke(), n = 240, out = [];
+  for (let i=0;i<=n;i++){ const x = s.xa + (s.xb - s.xa)*i/n; out.push([x, strokeAt(ksNow(), st.T, tRel, x, FT, XS, st.pins)]); }
+  return out;
+}
+
+function update(){
+  const ks = ksNow(), x = xNow(), s = stroke();
+  const q = strokeAt(ks, st.T, st.tRel, x, FT, XS, st.pins);
+  const ev = evaluate(ks, st.T, FT, XS, null, 1501, st.pins);
+  const cur = curves(st.tRel), thin = curves(st.T), thick = curves(0);
+  const k = q.k, ksv = ks === null ? Infinity : ks, delLim = ks === null ? null : del_el*ks/k;
+  // labels
+  $("xv").textContent = `x = ${fmt(x,1)} mm`;
+  $("tv").textContent = st.tRel < 0.005 ? "thickest, t = tₙ" : (Math.abs(st.tRel - st.T) < 0.005 ? "thinnest, t = tₙ − T" : `t = tₙ − ${fmt(st.tRel,2)} mm`);
+  $("kv").textContent = st.rigid ? "rigid link" : `${fmt(st.ks/1000,1)} kN/mm (b = ${fmt(widthFor(st.ks),1)} mm)`;
+  $("Tv").textContent = `${fmt(st.T,2)} mm`; $("Ev").textContent = st.E === 1 ? "1 (true scale)" : `${st.E}`;
+  // phase and direction of the cylinder force
+  const dir = st.anim ? st.anim.dir : (st.lastDir || 1);
+  const onPiece = x >= contactX(st.tRel, s.L);
+  const Preq = !onPiece ? 0 : (dir > 0 ? q.P_close : -q.P_open);
+  const Fmax = Math.max(...thick.map(c => c[1].F), 1);
+  drawMech(x, {N:onPiece ? q.N : 0, F:q.F, P:Preq, Fscale:Fmax});
+  // state line
+  let msg = "", cls = "";
+  if (st.stuck){ msg = st.stuck; cls = "bad"; }
+  else if (!onPiece) msg = dir > 0 ? "Approaching: the clamp arm swings toward the workpiece; the link carries no load." : "Released: the clamp arm lifts off the workpiece.";
+  else if (x >= XS - 1e-6) msg = "At the yoke stop: past the dead centre the link pushes the yoke against the stop — locked, also with the cylinder unpressurized.";
+  else if (Math.abs(x) < 0.15) msg = "Dead centre: largest shortening of the link.";
+  else if (x < 0) msg = dir > 0 ? "Arm on the workpiece: the yoke drives the link toward the dead centre, the link shortens." : "Back past the dead centre: the link now pushes the yoke and assists the opening.";
+  else msg = dir > 0 ? "Past the dead centre: the link pushes the yoke toward the stop." : "Pulling back toward the dead centre against the link force and the friction.";
+  $("state").textContent = msg; $("state").className = "state " + cls;
+  // graph 1: shortening
+  const dmax = Math.max(...thick.map(c => c[1].delta), delLim ? Math.min(delLim, 3) : 0, 0.05)*1.15;
+  plot("g1", [
+    {pts:thin.map(c => [c[0], c[1].delta]), color:"#a29bfe", w:1, op:0.5, dash:"4,3"},
+    {pts:thick.map(c => [c[0], c[1].delta]), color:"#ffb454", w:1, op:0.5, dash:"4,3"},
+    {pts:cur.map(c => [c[0], c[1].delta]), color:"#4ecdc4", w:2.2}],
+    {title:"Shortening of the link δ (mm), eq. (3)", ymax:dmax, yfmt:v => fmt(v,2),
+     hlines: delLim && delLim < dmax ? [[delLim, "#ff6b6b", "elastic limit of the spring link"]] : [], dots:[[q.delta, "#4ecdc4"]]});
+  // graph 2: forces on the arm and on the pad
+  const fmax = Math.max(...thick.map(c => c[1].F), MP.N_max, 1)*1.1;
+  plot("g2", [
+    {pts:cur.map(c => [c[0], c[1].F]), color:"#4ecdc4", w:2, label:"F on arm pin 56", lx:s.xa, ly:Math.max(...cur.map(c=>c[1].F))*0.92, anchor:"start"},
+    {pts:cur.map(c => [c[0], c[0] >= contactX(st.tRel, s.L) ? c[1].N : 0]), color:"#6bcf7f", w:2, label:"N on the pad", lx:s.xa, ly:Math.max(...cur.map(c=>c[1].N))*0.92+fmax*0.05, anchor:"start"}],
+    {title:"Forces (N): link on the clamp arm, eq. (8); clamping force, eq. (12)", ymax:fmax, yfmt:v => v >= 1000 ? fmt(v/1000,1)+"k" : fmt(v,0),
+     bands:[[ev.N_min, MP.N_max, "#1f4a3a"]], dots:[[q.F, "#4ecdc4"], [onPiece ? q.N : 0, "#6bcf7f"]]});
+  // graph 3: cylinder
+  const pmax = Math.max(...thick.map(c => Math.max(c[1].P_close, c[1].P_open)), P_ext, 1)*1.12;
+  const pmin = -0.15*pmax;
+  plot("g3", [
+    {pts:cur.map(c => [c[0], c[1].P_close]), color:"#a29bfe", w:2, label:"thrust to close", lx:s.xa, ly:pmax*0.18, anchor:"start"},
+    {pts:cur.map(c => [c[0], c[1].P_open]), color:"#a29bfe", w:1.6, dash:"5,3", label:"pull to open", lx:s.xa, ly:pmax*0.05, anchor:"start"}],
+    {title:"Cylinder force required (N), eq. (10)", ymin:pmin, ymax:pmax, h:165, xlabel:true, yfmt:v => fmt(v,0),
+     hlines:[[P_ext, "#6bcf7f", `available, extending ${fmt(P_ext,0)} N`], [P_ret, "#ff6b6b", `available, retracting ${fmt(P_ret,0)} N`]],
+     dots:[[dir > 0 ? q.P_close : q.P_open, "#a29bfe"]]});
+  // values
+  const rows = [
+    ["Yoke position x", `${fmt(x,2)} mm`, "figure 4"], ["Link angle φ", `${fmt(q.phi*180/Math.PI,2)}°`, "eq. (2)"],
+    ["Height of pin 56, h", `${fmt(q.h,2)} mm`, "eq. (1)"], ["Free length L (setting)", `${fmt(q.L,2)} mm`, "eq. (17)"],
+    ["Shortening δ", `${fmt(q.delta,3)} mm`, "eq. (3)"],
+    ["Deflection of the spring link kδ/kₛ", st.rigid ? "rigid" : `${fmt(k*q.delta/ksv,3)} mm (limit ${fmt(del_el,2)})`, "eq. (6), (8)"],
+    ["Link force on arm pin 56, F", `${fmt(q.F,0)} N`, "eq. (8)"], ["Component on the rear lever 36, F cos φ", `${fmt(q.F*Math.cos(q.phi),0)} N`, "eq. (12)"],
+    ["Clamping force on the pad, N", `${fmt(onPiece ? q.N : 0,0)} N (band ${fmt(ev.N_min,0)}–${fmt(MP.N_max,0)})`, "eq. (12)"],
+    ["Cylinder: thrust to close / pull to open", `${fmt(q.P_close,0)} / ${fmt(q.P_open,0)} N (available ${fmt(P_ext,0)} / ${fmt(P_ret,0)})`, "eq. (10)"]];
+  const t = $("vals"); clear(t); for (const r of rows){ const tr = document.createElement("tr");
+    for (const [i,c] of r.entries()){ const td = document.createElement("td"); td.textContent = c; if (i===2) td.className = "eq"; tr.appendChild(td); } t.appendChild(tr); }
+  // conditions
+  const cl = $("cond"); clear(cl);
+  const cond = [["C1","Thinnest piece held", ev.C1, `N = ${fmt(ev.N_thin,0)} N, min ${fmt(ev.N_min,0)}`],
+    ["C2","Thickest piece not marked", ev.C2, `N = ${fmt(ev.N_thick,0)} N, max ${fmt(MP.N_max,0)}`],
+    ["C3","Cylinder closes and locks", ev.C3, `thrust ${fmt(ev.P_close,0)} N, available ${fmt(P_ext,0)}`],
+    ["C4","Cylinder opens", ev.C4, `pull ${fmt(ev.P_open,0)} N, available ${fmt(P_ret,0)}`],
+    ["C5","Spring link stays elastic", ev.C5, st.rigid ? "rigid link" : `deflection ${fmt(ev.spring_defl,2)} mm, limit ${fmt(del_el,2)}`],
+    ["D1","Pins carry the peak force", ev.D1, `${fmt(ev.F_peak/1000,2)} kN, allowed ${fmt(MP.F_all/1000,0)}`]];
+  for (const c of cond){ const li = document.createElement("li");
+    li.innerHTML = `<span>${c[0]}</span><span class="${c[2]?"ok":"ko"}">${c[2]?"✓":"✗"}</span><span>${c[1]} — ${c[3]}</span>`; cl.appendChild(li); }
+  drawDomain();
+}
+
+// ---------- domain ----------
+let domCache = {key:null, grid:null};
+function drawDomain(){
+  const s = $("dom"); clear(s);
+  const W = 520, H = 300, ml = 46, mr = 10, mt = 10, mb = 34, nk = 46, nT = 31;
+  const key = `${st.pins}`;
+  if (domCache.key !== key){ const g = [];
+    for (let j=0;j<nk;j++){ const ks = 1000*Math.pow(40, j/(nk-1)); const col = [];
+      for (let i=0;i<nT;i++){ col.push(evaluate(ks, 3*i/(nT-1), FT, XS, null, 201, st.pins).ok); } g.push(col); }
+    domCache = {key:key, grid:g}; }
+  const X = ks => ml + (W-ml-mr)*Math.log(ks/1000)/Math.log(40), Y = T => mt + (H-mt-mb)*(1 - T/3);
+  const cw = (W-ml-mr)/(nk-1), ch = (H-mt-mb)/(nT-1);
+  for (let j=0;j<nk;j++) for (let i=0;i<nT;i++) if (domCache.grid[j][i]){
+    const ks = 1000*Math.pow(40, j/(nk-1)); el("rect", {x:X(ks)-cw/2, y:Y(3*i/(nT-1))-ch/2, width:cw+0.5, height:ch+0.5, fill:"#1f4a3a"}, s); }
+  const ax = el("g", {class:"axis"}, s);
+  el("line", {x1:ml, y1:H-mb, x2:W-mr, y2:H-mb, stroke:"#2a5a8f"}, ax); el("line", {x1:ml, y1:mt, x2:ml, y2:H-mb, stroke:"#2a5a8f"}, ax);
+  for (const k of [1,2,3,5,10,20,40]){ el("text", {x:X(k*1000), y:H-mb+12, "text-anchor":"middle"}, ax, k); }
+  for (const T of [0,1,2,3]) el("text", {x:ml-5, y:Y(T)+3, "text-anchor":"end"}, ax, T);
+  el("text", {x:(ml+W)/2, y:H-4, "text-anchor":"middle"}, ax, "spring link stiffness kₛ (kN/mm)");
+  el("text", {x:12, y:(mt+H-mb)/2, "text-anchor":"middle", transform:`rotate(-90 12 ${(mt+H-mb)/2})`}, ax, "tolerance width T (mm)");
+  el("line", {x1:ml, y1:Y(1.4), x2:W-mr, y2:Y(1.4), stroke:"#6b7f99", "stroke-dasharray":"5,3"}, s);
+  el("text", {x:W-mr-2, y:Y(1.4)-4, "text-anchor":"end", "font-size":9, fill:"#6b7f99"}, s, "EN 10029: T = 1.4 mm");
+  if (!st.rigid) el("circle", {cx:X(st.ks), cy:Y(st.T), r:5, fill:"#e8f0fa"}, s);
+  else el("text", {x:W-mr-4, y:mt+12, "text-anchor":"end", "font-size":10}, s, "rigid link: outside the plane");
+}
+
+// ---------- animation ----------
+function stepTo(target, dir){
+  if (st.anim) cancelAnimationFrame(st.anim.id);
+  st.stuck = null; st.lastDir = dir;
+  const s = stroke(), ks = ksNow();
+  const ev = evaluate(ks, st.T, FT, XS, null, 801, st.pins);
+  const t0 = performance.now(), u0 = st.u, dur = 3500*Math.abs(target - u0) + 200;
+  function frame(t){
+    let u = u0 + (target - u0)*Math.min((t - t0)/dur, 1);
+    const x = s.xa + u*(s.xb - s.xa), q = strokeAt(ks, st.T, st.tRel, x, FT, XS, st.pins);
+    const onPiece = x >= contactX(st.tRel, s.L);
+    if (onPiece && dir > 0 && q.P_close > P_ext){ st.stuck = `The cylinder cannot push further: thrust required ${fmt(q.P_close,0)} N > available ${fmt(P_ext,0)} N. The yoke stops before the stop: not locked.`; }
+    if (onPiece && dir < 0 && q.P_open > P_ret){ st.stuck = `The cylinder cannot pull the yoke back: pull required ${fmt(q.P_open,0)} N > available ${fmt(P_ret,0)} N. The clamp stays jammed closed.`; }
+    if (st.stuck){ st.anim = null; st.u = u; $("pos").value = Math.round(u*1000); update(); return; }
+    st.u = u; $("pos").value = Math.round(u*1000);
+    st.anim = {id:0, dir:dir}; update();
+    if ((t - t0) < dur) st.anim.id = requestAnimationFrame(frame); else st.anim = null;
+  }
+  st.anim = {id:requestAnimationFrame(frame), dir:dir};
+}
+
+// ---------- step (impulse) ----------
+function step(){
+  if (st.anim) cancelAnimationFrame(st.anim.id); st.anim = null; st.stuck = null;
+  const dir = st.stepDir, s = stroke(), ks = ksNow();
+  const u = Math.min(1, Math.max(0, st.u + dir/40)), x = s.xa + u*(s.xb - s.xa);
+  const q = strokeAt(ks, st.T, st.tRel, x, FT, XS, st.pins), onPiece = x >= contactX(st.tRel, s.L);
+  st.lastDir = dir;
+  if (onPiece && dir > 0 && q.P_close > P_ext) st.stuck = `The cylinder cannot push further: thrust required ${fmt(q.P_close,0)} N > available ${fmt(P_ext,0)} N. The yoke stops before the stop: not locked.`;
+  else if (onPiece && dir < 0 && strokeAt(ks, st.T, st.tRel, xNow(), FT, XS, st.pins).P_open > P_ret) st.stuck = `The cylinder cannot pull the yoke back: pull required ${fmt(strokeAt(ks, st.T, st.tRel, xNow(), FT, XS, st.pins).P_open,0)} N > available ${fmt(P_ret,0)} N. The clamp stays jammed closed.`;
+  else st.u = u;
+  $("pos").value = Math.round(st.u*1000); update();
+}
+
+// ---------- self-check against the Python reference cases ----------
+function runSelfCheck(){
+  if (!REF) return null;
+  let maxd = 0, flags = 0;
+  for (const r of REF){ const e = evaluate(r.k_s, r.T, r.F_t, r.x_s, null, 4001);
+    for (const c of ["N_thin","N_thick","P_close","P_open","spring_defl","F_peak"]) if (Math.abs(r[c]) > 1e-9) maxd = Math.max(maxd, Math.abs(e[c]-r[c])/Math.abs(r[c]));
+    for (const c of ["C1","C2","C3","C4","C5","D1"]) if (e[c] !== r[c]) flags++; }
+  const pass = maxd < 2e-3 && flags === 0;
+  console.log(`=== US5676357 explorer self-check: ${REF.length} cases, max relative delta ${maxd.toExponential(2)}, condition mismatches ${flags} → ${pass ? "PASS" : "FAIL"}`);
+  return {pass:pass, maxd:maxd, n:REF.length};
+}
+
+// ---------- wiring ----------
+function setToggle(onId, offId){ $(onId).classList.add("active"); $(offId).classList.remove("active"); }
+function init(){
+  st.stepDir = 1;
+  $("pos").addEventListener("input", e => { if (st.anim) cancelAnimationFrame(st.anim.id); st.anim = null; st.stuck = null;
+    const nu = +e.target.value/1000; st.lastDir = nu >= st.u ? 1 : -1; st.u = nu; update(); });
+  $("tsl").addEventListener("input", e => { st.tRel = st.T*(1 - e.target.value/1000); st.stuck = null; update(); });
+  $("ks").addEventListener("input", e => { st.ks = ksFromSlider(+e.target.value); st.stuck = null; update(); });
+  $("bSpring").addEventListener("click", () => { st.rigid = false; setToggle("bSpring","bRigid"); st.stuck = null; update(); });
+  $("bRigid").addEventListener("click", () => { st.rigid = true; setToggle("bRigid","bSpring"); st.stuck = null; update(); });
+  $("T").addEventListener("input", e => { const f = st.T > 0 ? st.tRel/st.T : 0; st.T = +e.target.value/100; st.tRel = f*st.T; st.stuck = null; update(); });
+  $("E").addEventListener("input", e => { st.E = +e.target.value; update(); });
+  $("bPinsOff").addEventListener("click", () => { st.pins = false; setToggle("bPinsOff","bPinsOn"); domCache.key = null; st.stuck = null; update(); });
+  $("bPinsOn").addEventListener("click", () => { st.pins = true; setToggle("bPinsOn","bPinsOff"); domCache.key = null; st.stuck = null; update(); });
+  $("bClose").addEventListener("click", () => { st.stepDir = 1; $("bDir").textContent = "step: closing"; stepTo(1, 1); });
+  $("bOpen").addEventListener("click", () => { st.stepDir = -1; $("bDir").textContent = "step: opening"; stepTo(0, -1); });
+  $("bStep").addEventListener("click", step);
+  $("bDir").addEventListener("click", () => { st.stepDir = -st.stepDir; $("bDir").textContent = st.stepDir > 0 ? "step: closing" : "step: opening"; });
+  $("bStop").addEventListener("click", () => { if (st.anim) cancelAnimationFrame(st.anim.id); st.anim = null; update(); });
+  $("ks").value = sliderFromKs(st.ks);
+  const fx = [["grp","Geometry"],["h₀ (pin 56 above line of 52)", `${MP.h0} mm`],["ℓᵣ (rear lever 36)", `${MP.l_r} mm`],["a (clamp arm 14)", `${MP.a} mm`],["λ = ℓᵣ/a", `${lam}`],["xₛ (yoke stop)", `${XS} mm`],
+    ["grp","Spring link and structure"],["R, tₛ", `${MP.R}, ${MP.t_s} mm`],["E", `${MP.E/1000} GPa`],["σ_adm", `${MP.sig_adm} MPa`],["K", fmt(K_curv,2)],["δ_el", `${fmt(del_el,2)} mm`],["k_c", `${MP.k_c/1000} kN/mm`],
+    ["grp","Friction"],["μ_g (tracks)", `${MP.mu_g}`],["μ_p, r_p (pins, switch)", `${MP.mu_p}, ${MP.r_p} mm`],
+    ["grp","Loads and limits"],["F_t, F_z (cutting)", `${FT}, ${FT/2} N`],["μ, S", `${MP.mu}, ${MP.S}`],["N_min", `${fmt(nMin(FT),1)} N`],["N_max", `${MP.N_max} N`],
+    ["cylinder", `Ø${MP.D}/${MP.d_rod} mm, ${MP.p*10} bar`],["P_ext, P_ret", `${fmt(P_ext,0)}, ${fmt(P_ret,0)} N`],["F_all", `${MP.F_all/1000} kN`]];
+  const ft = $("fixed"); for (const r of fx){ const tr = document.createElement("tr");
+    if (r[0] === "grp"){ tr.className = "grp"; tr.innerHTML = `<td colspan="2">${r[1]}</td>`; } else tr.innerHTML = `<td>${r[0]}</td><td>${r[1]}</td>`; ft.appendChild(tr); }
+  if (REF){ let h = "<table class='const-table'><tr class='grp'><td>link</td><td>T</td><td>N thin</td><td>N thick</td><td>P close</td><td>P open</td><td>C1–C5, D1</td></tr>";
+    for (const r of REF) h += `<tr><td>${r.k_s===null?"rigid":r.k_s/1000+" kN/mm"}</td><td>${r.T}</td><td>${fmt(r.N_thin,0)}</td><td>${fmt(r.N_thick,0)}</td><td>${fmt(r.P_close,0)}</td><td>${fmt(r.P_open,0)}</td><td>${["C1","C2","C3","C4","C5","D1"].map(c=>r[c]?"✓":"✗").join(" ")}</td></tr>`;
+    $("reftab").innerHTML = h + "</table>"; }
+  update();
+  const sc = runSelfCheck(), b = $("selfcheck-badge");
+  if (sc){ b.textContent = `${sc.pass ? "PASS" : "FAIL"}  ${sc.n} cases  maxδ=${sc.maxd.toExponential(2)}`; b.classList.add(sc.pass ? "pass" : "fail"); }
+  else b.textContent = "reference table not injected (run check.py)";
+}
+init();
+</script>
+</body>
+</html>
