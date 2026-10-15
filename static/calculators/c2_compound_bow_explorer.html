@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compound Bow with Eccentric Pulleys — Explorer — eng-tools.dev</title>
+<style>
+  :root { --bg:#0a1628; --bg-panel:#0f1f3a; --bg-input:#162a4a; --border:#1e3a5f; --border-hi:#2a5a8f; --text:#c8d6e5; --text-dim:#7f93ad; --text-bright:#e8f0fa;
+    --c-comp:#4ecdc4; --c-str:#e8f0fa; --c-conv:#ff6b6b; --c-ps:#ffe66d; --c-pc:#a29bfe; --c-force:#ffb454; --ok:#6bcf7f; --warn:#ffb454; --grid:#152240; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body { background:var(--bg); color:var(--text); font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; line-height:1.4; }
+  .mono, code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+  .container { max-width:1480px; margin:0 auto; padding:10px 14px 10px; display:flex; flex-direction:column; min-height:100vh; }
+  header { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; border-bottom:1px solid var(--border); padding-bottom:6px; margin-bottom:8px; }
+  header h1 { font-family:ui-monospace,monospace; font-weight:600; font-size:16px; color:var(--text-bright); letter-spacing:-.3px; }
+  header p { font-size:11.5px; color:var(--text-dim); font-family:ui-monospace,monospace; }
+  .banner { font-size:11px; padding:4px 9px; border-left:2px solid var(--warn); background:var(--bg-input); border-radius:3px; margin-bottom:8px; }
+  .layout { flex:1 1 auto; min-height:0; display:grid; grid-template-columns:230px 400px minmax(0,1fr); gap:10px; }
+  .col { display:flex; flex-direction:column; min-height:0; min-width:0; gap:10px; }
+  .panel { background:var(--bg-panel); border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; flex-direction:column; min-height:0; }
+  .grow { flex:1 1 0; }
+  .panel-title { font-family:ui-monospace,monospace; font-weight:600; font-size:10px; text-transform:uppercase; letter-spacing:1.2px; color:var(--text-dim); margin-bottom:6px; }
+  .control { margin-bottom:8px; }
+  .control-label { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:3px; gap:6px; font-size:12px; }
+  .control-value { font-family:ui-monospace,monospace; font-size:11.5px; color:var(--text-bright); background:var(--bg-input); padding:1px 6px; border-radius:3px; white-space:nowrap; }
+  input[type=range] { -webkit-appearance:none; width:100%; height:4px; background:var(--bg-input); border-radius:2px; outline:none; cursor:pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:var(--c-comp); border:2px solid var(--bg); cursor:pointer; }
+  input[type=range]::-moz-range-thumb { width:14px; height:14px; border-radius:50%; background:var(--c-comp); border:2px solid var(--bg); cursor:pointer; }
+  #draw::-webkit-slider-thumb { background:var(--c-ps); } #draw::-moz-range-thumb { background:var(--c-ps); }
+  .note { font-size:10.5px; color:var(--text-dim); margin-top:2px; }
+  .btnrow { display:flex; gap:6px; margin-top:6px; }
+  button { flex:1; font-family:ui-monospace,monospace; font-size:11px; padding:5px 6px; border-radius:4px; border:1px solid var(--border-hi); background:var(--bg-input); color:var(--text); cursor:pointer; }
+  button:hover { color:var(--text-bright); border-color:var(--c-comp); }
+  .seg { display:flex; border:1px solid var(--border-hi); border-radius:4px; overflow:hidden; }
+  .seg button { border:none; border-radius:0; padding:4px 6px; background:transparent; color:var(--text-dim); }
+  .seg button + button { border-left:1px solid var(--border-hi); }
+  .seg button.on { background:var(--border-hi); color:var(--text-bright); }
+  .title-row { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:6px; }
+  .title-row .panel-title { margin-bottom:0; }
+  .title-row .seg { width:200px; flex:none; }
+  svg { display:block; width:100%; background:var(--bg); border-radius:4px; }
+  svg.fill { flex:1 1 0; min-height:0; height:100%; }
+  svg text { fill:var(--text); font-family:ui-monospace,monospace; }
+  .axis text { fill:var(--text-dim); font-size:10px; }
+  #pulley { height:200px; flex:none; }
+  table.t { width:100%; border-collapse:collapse; font-family:ui-monospace,monospace; font-size:11.5px; }
+  table.t th { text-align:right; font-weight:500; color:var(--text-dim); padding:3px 0 5px 8px; font-size:10.5px; }
+  table.t th:first-child { text-align:left; padding-left:0; }
+  table.t td { padding:3px 0 3px 8px; border-top:1px solid var(--border); text-align:right; color:var(--text-bright); white-space:nowrap; }
+  table.t td:first-child { text-align:left; color:var(--text); padding-left:0; white-space:normal; }
+  table.t td.eq { color:var(--text-dim); font-size:10.5px; }
+  table.t tr.grp td { color:var(--text-dim); font-size:10px; text-transform:uppercase; letter-spacing:1px; border-top:none; padding-top:9px; }
+  ul.cond { list-style:none; font-family:ui-monospace,monospace; font-size:11.5px; }
+  ul.cond li { display:grid; grid-template-columns:2.4em 1.4em 1fr; gap:4px; padding:4px 0; border-bottom:1px solid var(--border); }
+  .ok { color:var(--ok); font-weight:700; } .ko { color:var(--c-conv); font-weight:700; }
+  .legend { display:flex; gap:14px; flex-wrap:wrap; margin-top:4px; font-size:11px; color:var(--text-dim); }
+  .legend i { display:inline-block; width:16px; height:3px; border-radius:2px; vertical-align:middle; margin-right:5px; }
+  .charts { flex:1 1 0; min-height:0; display:flex; flex-direction:column; gap:6px; }
+  .chartbox { display:flex; flex-direction:column; min-height:0; }
+  .chartbox.f { flex:3 1 0; } .chartbox.p { flex:2 1 0; }
+  .sub { font-family:ui-monospace,monospace; font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--text-dim); margin:2px 0 3px; }
+  .strip { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:4px 8px; margin-top:8px; padding-top:7px; border-top:1px solid var(--border); font-family:ui-monospace,monospace; }
+  .strip div { font-size:10px; color:var(--text-dim); line-height:1.25; }
+  .strip b { display:block; font-size:12.5px; font-weight:500; color:var(--text-bright); }
+  .values { flex:1 1 0; min-height:0; overflow:auto; display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:16px; }
+  .hidden { display:none !important; }
+  #selfcheck { font-family:ui-monospace,monospace; font-size:11px; padding:2px 8px; border-radius:3px; display:inline-block; margin-top:10px; }
+  #selfcheck.pass { background:rgba(107,207,127,.15); color:var(--ok); border:1px solid var(--ok); }
+  #selfcheck.fail { background:rgba(255,107,107,.15); color:var(--c-conv); border:1px solid var(--c-conv); }
+  footer { margin-top:6px; font-size:10.5px; color:var(--text-dim); }
+  details { font-size:11px; margin-top:4px; } details summary { cursor:pointer; color:var(--text-dim); font-family:ui-monospace,monospace; }
+  hr.sep { border:none; border-top:1px solid var(--border); margin:6px 0 8px; }
+  /* one screen on a desktop; normal page flow on small or short screens */
+  @media (min-width:1100px) and (min-height:640px) { .container { height:100vh; } }
+  @media (max-width:1099px), (max-height:639px) {
+    .container { height:auto; }
+    .layout { grid-template-columns:236px minmax(0,1fr); } .col.out { grid-column:1 / span 2; }
+    .col.draw svg.fill { height:520px; flex:none; } .charts { flex:none; } .chartbox.f { height:340px; flex:none; } .chartbox.p { height:240px; flex:none; }
+  }
+  @media (max-width:700px) { .layout { grid-template-columns:1fr; } .col.out { grid-column:auto; } .strip { grid-template-columns:repeat(3, minmax(0,1fr)); } .values { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Compound Bow with Eccentric Pulleys — Explorer</h1>
+    <p>Core Ideas · US 3,486,495 · the model of document B, recomputed live in JavaScript</p>
+  </header>
+
+  <div class="layout">
+    <div class="col ctl">
+      <div class="panel grow">
+        <div class="panel-title">Controls</div>
+        <div class="control"><div class="control-label"><span>Eccentricity <i>e/r</i></span><span class="control-value" id="v-er"></span></div>
+          <input type="range" id="er" min="0.30" max="0.95" step="0.01" value="0.70">
+          <div class="note">axle off the centre · <span id="rset"></span>, eq. (19)</div></div>
+        <div class="control"><div class="control-label"><span>Draw length of the archer</span><span class="control-value" id="v-dl"></span></div>
+          <input type="range" id="dl" min="28" max="31" step="0.25" value="30">
+          <div class="note">the bow is set for 30 in</div></div>
+        <div class="control"><div class="control-label"><span>Arrow mass</span><span class="control-value" id="v-ma"></span></div>
+          <input type="range" id="ma" min="250" max="500" step="10" value="350"></div>
+        <div class="control"><div class="control-label"><span>Bow with the string tied</span></div>
+          <div class="seg" id="cmp"><button data-v="peak" class="on">same peak</button><button data-v="energy">same energy</button></div>
+          <div class="note" id="cmp-note"></div></div>
+        <hr class="sep">
+        <div class="control"><div class="control-label"><span>Draw (from brace)</span><span class="control-value" id="v-d"></span></div>
+          <input type="range" id="draw" min="0" max="540" step="1" value="540">
+          <div class="btnrow"><button id="play">▶ draw</button><button id="reset" title="reference case, cursor at brace">reset</button></div></div>
+        <details><summary>fixed data (B §5.1, §7)</summary>
+          <table class="t" style="margin-top:6px">
+            <tr><td>peak draw force</td><td>311.4 N (70 lb)</td></tr>
+            <tr><td>brace height</td><td>177.8 mm (7 in)</td></tr>
+            <tr><td>limb arm</td><td>400 mm</td></tr>
+            <tr><td>hinge height</td><td>250 mm</td></tr>
+            <tr><td>limb at brace / unstrung</td><td>20° / −5°</td></tr>
+            <tr><td>virtual mass of the bow</td><td>3.88 g</td></tr>
+          </table></details>
+      </div>
+    </div>
+
+    <div class="col draw">
+      <div class="panel grow">
+        <div class="panel-title">The bow, to scale <span style="text-transform:none;letter-spacing:0;font-weight:400">· pale: brace</span></div>
+        <svg id="bow" class="fill" viewBox="-60 -680 1110 1360" preserveAspectRatio="xMidYMid meet" role="img" aria-label="The bow, drawn to scale, with the draw force at the nocking point"></svg>
+        <div class="panel-title" style="margin-top:8px">The pulley, enlarged</div>
+        <svg id="pulley" viewBox="0 0 116 76" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Eccentric pulley, enlarged"></svg>
+        <div class="note" id="pul-note" style="margin-top:4px;line-height:1.35"></div>
+        <div class="legend"><span><i style="background:var(--c-str)"></i>string</span><span><i style="background:#8fb8ff"></i>cable</span><span><i style="background:var(--c-ps)"></i>p<sub>s</sub></span><span><i style="background:var(--c-pc)"></i>p<sub>c</sub></span><span><i style="background:var(--c-force)"></i>draw force</span></div>
+      </div>
+    </div>
+
+    <div class="col out">
+      <div class="panel grow">
+        <div class="title-row"><div class="panel-title" id="out-title">Diagrams along the draw</div>
+          <div class="seg" id="view"><button data-v="diagrams" class="on">diagrams</button><button data-v="values">values</button></div></div>
+        <div id="v-diagrams" class="charts">
+          <div class="chartbox f"><div class="sub">draw force along the draw</div>
+            <svg id="chart-f" class="fill" viewBox="0 0 640 400" preserveAspectRatio="none"></svg>
+            <div class="legend"><span><i style="background:var(--c-comp)"></i>eccentric pulleys</span><span><i style="background:var(--c-conv)"></i>string tied to the limbs, <span id="leg-cmp">same peak</span></span><span><i style="background:#fff;opacity:.5"></i>rectangle of eq. (16)</span></div></div>
+          <div class="chartbox p"><div class="sub">lever arms of string and cable about the axle</div>
+            <svg id="chart-p" class="fill" viewBox="0 0 640 340" preserveAspectRatio="none"></svg></div>
+        </div>
+        <div id="v-values" class="values hidden">
+          <div><div class="sub">energy, holding force and arrow speed</div><table class="t" id="t-out"></table></div>
+          <div><div class="sub">conditions</div><ul class="cond" id="cond"></ul>
+            <div class="note" style="margin-top:6px">The conditions are those of B §7.2: the bow with the string tied is set for the same peak.</div>
+            <span id="selfcheck"></span></div>
+        </div>
+        <div class="strip" id="strip"></div>
+      </div>
+    </div>
+  </div>
+  <footer>Quasi-static model, rigid limb on an elastic hinge, inextensible string and cable, pulley without friction (B §5–§6). Equation numbers refer to document B.</footer>
+</div>
+
+<script>
+/*MODEL-BEGIN*/
+// Model of document B (math page), port of US3486495_model.py. Plane geometry, SI units (m, N, J, rad).
+// Single source of numbers for the explorer: the same functions feed the drawing, the curves and the outputs.
+const TAU = 2 * Math.PI, LBF = 4.4482216152605, INCH = 0.0254, GRAIN = 64.79891e-6, FPS = 0.3048;
+const P = {
+  F_pk: 70 * LBF, DL: 30 * INCH, DL_off: 1.75 * INCH, h_b: 7 * INCH, m_a: 350 * GRAIN, m_v: 3.88e-3,
+  y_H: 0.25, l: 0.40, a_b: 20 * Math.PI / 180, d0: 25 * Math.PI / 180, er: 0.70, gam: Math.PI, LO_min: 0.50,
+};
+const x_full = P.DL - P.DL_off;
+const near = (t, ref) => t + TAU * Math.round((ref - t) / TAU);
+const cross = (p, u) => p[0] * u[1] - p[1] * u[0];
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1]];
+const hyp = (v) => Math.hypot(v[0], v[1]);
+function linspace(a, b, n) { const o = new Array(n), s = (b - a) / (n - 1); for (let i = 0; i < n; i++) o[i] = a + s * i; return o; }
+function interp(xq, xs, ys) {
+  if (xq <= xs[0]) return ys[0]; if (xq >= xs[xs.length - 1]) return ys[ys.length - 1];
+  let lo = 0, hi = xs.length - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (xs[m] <= xq) lo = m; else hi = m; }
+  return ys[lo] + (ys[hi] - ys[lo]) * (xq - xs[lo]) / (xs[hi] - xs[lo]);
+}
+function bisect(f, a, b, n = 60) {
+  let fa = f(a); if (fa * f(b) > 0) return null;
+  for (let i = 0; i < n; i++) { const m = 0.5 * (a + b), fm = f(m); if (fa * fm <= 0) b = m; else { a = m; fa = fm; } }
+  return 0.5 * (a + b);
+}
+function secant(f, x0, x1, tol = 1e-13, n = 40) {
+  let f0 = f(x0), f1 = f(x1);
+  for (let i = 0; i < n; i++) {
+    if (f1 === f0) break;
+    const x2 = x1 - f1 * (x1 - x0) / (f1 - f0);
+    x0 = x1; f0 = f1; x1 = x2; f1 = f(x1);
+    if (Math.abs(x1 - x0) < tol) return x1;
+  }
+  return null;
+}
+class Compound {
+  constructor(er = P.er, r = 0.03, p = P) {
+    this.p = p; this.r = r; this.e = er * r; this.er = er; this.gam = p.gam;
+    this.l = p.l; this.yH = p.y_H; this.ab = p.a_b; this.au = this.ab - p.d0;
+    this.xH = p.h_b - r - this.l * Math.sin(this.ab) - this.e * Math.cos(this.gam);
+    const [A, c] = this.axle_centre(this.ab, 0.0);
+    this.S1 = c[1];
+    const [th2, t2] = this.cable(this.ab, 0.0, Math.PI); this.th2_b = th2;
+    this.S2 = t2 + r * 1.5 * Math.PI;
+  }
+  axle(a) { return [this.xH + this.l * Math.sin(a), this.yH + this.l * Math.cos(a)]; }
+  axle_centre(a, psi) { const A = this.axle(a); return [A, [A[0] + this.e * Math.cos(this.gam - psi), A[1] + this.e * Math.sin(this.gam - psi)]]; }
+  cable(a, psi, ref) {
+    const [A, c] = this.axle_centre(a, psi), v = [A[0] - c[0], -A[1] - c[1]], d = hyp(v);
+    return [near(Math.atan2(v[1], v[0]) - Math.acos(this.r / d), ref), Math.sqrt(d * d - this.r * this.r)];
+  }
+  cable_fit(a, psi, ref) {
+    const [th, t] = this.cable(a, psi, ref); const w = 1.5 * Math.PI + psi + (th - this.th2_b);
+    return [th, t, this.r, this.r * w];
+  }
+  string(x, a, psi, ref = 0.3) {
+    const [A, c] = this.axle_centre(a, psi), v = [x - c[0], -c[1]], d = hyp(v);
+    return [near(Math.atan2(v[1], v[0]) + Math.acos(this.r / d), ref), Math.sqrt(d * d - this.r * this.r)];
+  }
+  solve(psi, ref2, guess) {
+    const f = (a) => { const q = this.cable_fit(a, psi, ref2); return q[1] + q[3] - this.S2; };
+    let a = guess ? secant(f, guess[0], guess[0] + 1e-4) : null;
+    if (a === null || !(this.ab - 0.3 < a && a < this.ab + 1.2)) a = bisect(f, this.ab - 0.3, this.ab + 1.2);
+    if (a === null) return null;
+    const [A, c] = this.axle_centre(a, psi), xmin = c[0] + this.r;
+    const g = (x) => { const q = this.string(x, a, psi); return q[1] + this.r * (-psi - q[0]) - this.S1; };
+    let x = (guess && guess[1] > xmin + 1e-3) ? secant(g, guess[1], guess[1] + 1e-4) : null;
+    if (x === null || x < xmin) x = bisect(g, xmin, xmin + 2.0);
+    return x === null ? null : [a, x];
+  }
+  state(a, psi, x, ref2) {
+    const [A, c] = this.axle_centre(a, psi), H = [this.xH, this.yH], N = [x, 0.0];
+    const [th1, t1] = this.string(x, a, psi); const [th2, t2, rc] = this.cable_fit(a, psi, ref2);
+    const T1 = [c[0] + this.r * Math.cos(th1), c[1] + this.r * Math.sin(th1)];
+    const T2 = [c[0] + rc * Math.cos(th2), c[1] + rc * Math.sin(th2)];
+    const us = [(N[0] - T1[0]) / t1, (N[1] - T1[1]) / t1];
+    const uc = [(A[0] - T2[0]) / t2, (-A[1] - T2[1]) / t2];
+    const T2m = [T2[0], -T2[1]], dm = sub(T2m, A), ucp = [dm[0] / hyp(dm), dm[1] / hyp(dm)];
+    const ps = Math.abs(cross(sub(T1, A), us)), pc = Math.abs(cross(sub(T2, A), uc)), k = ps / pc;
+    const w = [us[0] + k * (uc[0] + ucp[0]), us[1] + k * (uc[1] + ucp[1])];
+    const M = cross(sub(A, H), w), Ts = -(a - this.au) / M;
+    return { Ts, Tc: k * Ts, F: 2 * Ts * us[0], ps, pc, k, A, c, H, N, T1, T2, us, uc, ucp, th1, th2 };
+  }
+  sweep(x_end = null, n = 700, psimax = 8.0) {
+    x_end = x_end === null ? x_full + 0.10 : x_end;
+    const R = { psi: [], a: [], x: [], F1: [], ps: [], pc: [], Ts1: [], Tc1: [] };
+    let ref2 = this.th2_b, sol = null;
+    for (const psi of linspace(1e-6, psimax, n)) {
+      sol = this.solve(psi, ref2, sol); if (sol === null) break;
+      const [a, x] = sol, st = this.state(a, psi, x, ref2); ref2 = st.th2;
+      R.psi.push(psi); R.a.push(a); R.x.push(x); R.F1.push(st.F); R.ps.push(st.ps); R.pc.push(st.pc); R.Ts1.push(st.Ts); R.Tc1.push(st.Tc);
+      if (x > x_end) break;
+    }
+    return R;
+  }
+}
+function conventional_sweep(p = P, x_end = null, n = 3000) {
+  x_end = x_end === null ? x_full + 0.10 : x_end;
+  const xH = p.h_b - p.l * Math.sin(p.a_b), H = [xH, p.y_H], au = p.a_b - p.d0;
+  const A = (a) => [xH + p.l * Math.sin(a), p.y_H + p.l * Math.cos(a)];
+  const s0 = A(p.a_b)[1], R = { a: [], x: [], F1: [], T1: [], au, xH, s0 };
+  for (const a of linspace(p.a_b, p.a_b + 1.5, n)) {
+    const Q = A(a); if (Q[1] > s0) continue;
+    const x = Q[0] + Math.sqrt(s0 * s0 - Q[1] * Q[1]), u = [(x - Q[0]) / s0, (0 - Q[1]) / s0];
+    const T = -(a - au) / cross(sub(Q, H), u);
+    R.a.push(a); R.x.push(x); R.F1.push(2 * T * u[0]); R.T1.push(T);
+    if (x > x_end) break;
+  }
+  return R;
+}
+function valley(sw, x_lim) {
+  const x = sw.x, F = sw.F1; let ip = -1, best = -Infinity;
+  for (let i = 0; i < x.length; i++) if (x[i] < x_lim && F[i] > best) { best = F[i]; ip = i; }
+  if (ip < 0) return Infinity;
+  let j = ip, mn = Infinity; for (let i = ip; i < F.length; i++) if (F[i] < mn) { mn = F[i]; j = i; }
+  if (j === 0 || j >= x.length - 1) return Infinity;
+  const y0 = F[j - 1], y1 = F[j], y2 = F[j + 1], den = y0 - 2 * y1 + y2, t = den !== 0 ? 0.5 * (y0 - y2) / den : 0.0;
+  const idx = j + t, i0 = Math.max(0, Math.min(x.length - 2, Math.floor(idx))), fr = Math.max(0, Math.min(1, idx - i0));
+  return x[i0] + (x[i0 + 1] - x[i0]) * fr;
+}
+function r_valley(er, p = P, x_target = null, lo = 0.018, hi = 0.045) {
+  x_target = x_target === null ? x_full : x_target;
+  const f = (r) => valley(new Compound(er, r, p).sweep(x_target + 0.3, 900, TAU), x_target) - x_target;
+  const r = secant(f, 0.029, 0.031, 1e-8, 30);
+  if (r !== null && lo <= r && r <= hi && Math.abs(f(r)) < 1e-5) return r;
+  let b = hi;
+  while (b - 0.002 >= lo) { const a = b - 0.002, fa = f(a); if (isFinite(fa) && fa < 0) return bisect(f, a, b, 25); b = a; }
+  return null;
+}
+function metrics(b, sw, cv, DL, m_a, p = P) {
+  const xf = DL - p.DL_off, x = sw.x, F1 = sw.F1;
+  let Fm = -Infinity, ipk = 0; for (let i = 0; i < x.length; i++) if (x[i] <= xf && F1[i] > Fm) { Fm = F1[i]; ipk = i; }
+  const C = p.F_pk / Fm, af = interp(xf, x, sw.a), E = C * ((af - b.au) ** 2 - (b.ab - b.au) ** 2), hold = C * interp(xf, x, F1);
+  let Fc = -Infinity; for (let i = 0; i < cv.x.length; i++) if (cv.x[i] <= xf && cv.F1[i] > Fc) Fc = cv.F1[i];
+  const Cc = p.F_pk / Fc, afc = interp(xf, cv.x, cv.a), Ec = Cc * ((afc - cv.au) ** 2 - (p.a_b - cv.au) ** 2);
+  const v = Math.sqrt(2 * E / (m_a + p.m_v)), vc = Math.sqrt(2 * Ec / (m_a + p.m_v));
+  const o = { er: b.er, r: b.r, e: b.e, C, Cc, E, Ec, hold, letoff: 1 - hold / p.F_pk, v, vc, psi_f: interp(xf, x, sw.psi),
+    da: af - b.ab, dac: afc - p.a_b, x_pk: x[ipk], xf, tip: p.l * (af - b.ab), tipc: p.l * (afc - p.a_b),
+    fill: E / (p.F_pk * (xf - p.h_b)), fillc: Ec / (p.F_pk * (xf - p.h_b)),
+    Tc_f: C * interp(xf, x, sw.Tc1), Ts_f: C * interp(xf, x, sw.Ts1), Emax: p.F_pk * (xf - p.h_b) };
+  o.C1 = o.letoff >= p.LO_min; o.C2 = E >= Ec; o.C3 = hold > 0; o.ok = o.C1 && o.C2 && o.C3;
+  return o;
+}
+function evaluate(er = P.er, r = null, DL = null, m_a = null, p = P, n = 900) {
+  r = r === null ? r_valley(er, p) : r; DL = DL === null ? p.DL : DL; m_a = m_a === null ? p.m_a : m_a;
+  const b = new Compound(er, r, p), xe = Math.max(DL - p.DL_off, x_full) + 0.05;
+  const sw = b.sweep(xe, n), cv = conventional_sweep(p, xe), o = metrics(b, sw, cv, DL, m_a, p);
+  o.sweep = sw; o.conv = cv; o.bow = b; return o;
+}
+// state of the compound bow with the nocking point at x (from the sweep, refined by the exact solution)
+function state_at(o, x) {
+  const b = o.bow, sw = o.sweep, psi = interp(x, sw.x, sw.psi), a0 = interp(x, sw.x, sw.a);
+  const sol = b.solve(psi, Math.PI, [a0, x]) || [a0, x], st = b.state(sol[0], psi, sol[1], Math.PI);
+  st.psi = psi; st.a = sol[0]; st.x = sol[1]; return st;
+}
+if (typeof module !== 'undefined') module.exports = { P, x_full, Compound, conventional_sweep, valley, r_valley, metrics, evaluate, state_at, INCH, GRAIN, LBF, FPS };
+
+/*MODEL-END*/
+const REF = {"r": 0.029534922250383674, "C": 429.20009716636133, "Cc": 109.36641675864104, "E": 119.30643244851206, "Ec": 80.98532986800694, "hold": 121.71668055902612, "letoff": 0.6091000240845751, "v": 94.78421361315398, "vc": 78.09212832984507};
+
+const $ = (id) => document.getElementById(id);
+const f = (x, d = 1) => (isFinite(x) ? x.toFixed(d) : '—');
+const deg = (r) => r * 180 / Math.PI;
+let bowCache = null, anim = null, CMP = 'peak', VIEW = 'diagrams';
+const rCache = new Map();
+const XMAX_IN = 31;
+
+function getBow(er) {
+  const key = er.toFixed(3);
+  if (!bowCache || bowCache.key !== key) {
+    let r = rCache.get(key); if (r === undefined) { r = r_valley(er); rCache.set(key, r); }
+    if (r === null) { bowCache = { key, fail: true }; return bowCache; }
+    const b = new Compound(er, r), xe = XMAX_IN * INCH - P.DL_off + 0.05;
+    bowCache = { key, b, r, sw: b.sweep(xe, 900), cv: conventional_sweep(P, xe) };
+  }
+  return bowCache;
+}
+
+/* the bow with the string tied: same peak (B §7.1) or same stored energy (B §6.5, §7.3); its force scales with its stiffness */
+function model() {
+  const er = +$('er').value, DL = +$('dl').value * INCH, ma = +$('ma').value * GRAIN, bc = getBow(er);
+  if (bc.fail) return null;
+  const o = metrics(bc.b, bc.sw, bc.cv, DL, ma); o.sweep = bc.sw; o.conv = bc.cv; o.bow = bc.b;
+  const s = CMP === 'energy' ? o.E / o.Ec : 1;
+  o.k0 = s; o.C0 = o.Cc * s; o.E0 = o.Ec * s; o.v0 = Math.sqrt(2 * o.E0 / (ma + P.m_v)); o.hold0 = P.F_pk * s; o.pk0 = P.F_pk * s;
+  return o;
+}
+
+/* ---------- drawing: upper half; the lower half is its mirror image about the arrow line ---------- */
+const FSCALE = 0.55;   // drawing: mm of arrow per N of draw force
+function drawBow(o, D) {
+  const b = o.bow, x = P.h_b + D, st = state_at(o, x), st0 = state_at(o, o.sweep.x[0]);
+  const X = (p) => (p[0] * 1000).toFixed(1), Y = (p) => (-p[1] * 1000).toFixed(1), mir = (p) => [p[0], -p[1]];
+  const line = (a, c, col, w, extra = '') => `<line x1="${X(a)}" y1="${Y(a)}" x2="${X(c)}" y2="${Y(c)}" stroke="${col}" stroke-width="${w}" ${extra}/>`;
+  const circ = (c, r, col, w) => `<circle cx="${X(c)}" cy="${Y(c)}" r="${(r * 1000).toFixed(1)}" fill="none" stroke="${col}" stroke-width="${w}"/>`;
+  const dot = (c, r, col) => `<circle cx="${X(c)}" cy="${Y(c)}" r="${r}" fill="${col}"/>`;
+  const upper = (s, op) => {
+    const H = s.H, A = s.A, c = s.c, T1 = s.T1, T2 = s.T2, N = s.N, Am = mir(A), T2m = mir(T2);
+    const rm = [c[0] + b.r * Math.cos(P.gam - s.psi), c[1] + b.r * Math.sin(P.gam - s.psi)];
+    let g = `<g opacity="${op}">`;
+    for (const m of [(p) => p, mir]) {   // upper half and its mirror image: the whole bow
+      g += line(m(H), m(A), '#9fb3cc', 7) + circ(m(c), b.r, '#cfdcf0', 3) + line(m(A), m(c), '#cfdcf0', 2) + dot(m(A), 7, '#e8f0fa') + dot(m(rm), 5, 'var(--c-ps)');
+      g += line(m(T1), N, 'var(--c-str)', 3.2);
+    }
+    g += line(T2, Am, '#8fb8ff', 3) + line(T2m, A, '#8fb8ff', 3);
+    return g + '</g>';
+  };
+  let s = `<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--c-force)"/></marker></defs>`;
+  s += upper(st0, 0.22) + upper(st, 1);
+  s += line([b.xH, P.y_H], [b.xH, -P.y_H], '#cfdcf0', 12, 'stroke-linecap="round"') + dot(st.H, 6, '#fff') + dot(mir(st.H), 6, '#fff');
+  const N = st.N, tip = [N[0] - 0.74, 0];
+  s += line(N, tip, '#e8f0fa', 3, 'stroke-dasharray="14 8"');
+  const A = st.A, us = st.us, uc = st.uc, T1 = st.T1, T2 = st.T2;
+  const ds = (A[0] - T1[0]) * us[0] + (A[1] - T1[1]) * us[1], fs = [T1[0] + us[0] * ds, T1[1] + us[1] * ds];
+  const dc = (A[0] - T2[0]) * uc[0] + (A[1] - T2[1]) * uc[1], fc = [T2[0] + uc[0] * dc, T2[1] + uc[1] * dc];
+  s += line(A, fs, 'var(--c-ps)', 3, 'stroke-dasharray="6 5"') + line(A, fc, 'var(--c-pc)', 3, 'stroke-dasharray="6 5"');
+  // draw force at the nocking point, towards the archer, to scale (FSCALE)
+  const F = st.F * o.C, x0 = N[0] * 1000, L = FSCALE * F;
+  if (L > 4) s += `<line x1="${x0.toFixed(1)}" y1="0" x2="${(x0 + L).toFixed(1)}" y2="0" stroke="var(--c-force)" stroke-width="10" marker-end="url(#ah)"/>`;
+  const bx = x0 + 14, lab = `F = ${f(F, 1)} N`;
+  s += `<rect x="${bx.toFixed(1)}" y="28" width="${(lab.length * 24 + 30).toFixed(0)}" height="62" rx="8" fill="var(--bg-panel)" stroke="var(--c-force)" stroke-width="3"/>`;
+  s += `<text x="${(bx + 14).toFixed(1)}" y="72" font-size="38" style="fill:var(--c-force);font-weight:600">${lab}</text>`;
+  s += dot(N, 7, 'var(--c-conv)');
+  s += `<text x="${(+X(N) - 14)}" y="${(+Y(N) - 16)}" font-size="34" text-anchor="end">N</text>`;
+  s += `<text x="${(b.xH * 1000 - 48).toFixed(0)}" y="${(-P.y_H * 1000 + 10).toFixed(0)}" font-size="34">H</text>`;
+  s += `<text x="${(+X(A) + 40)}" y="${(+Y(A) - 4)}" font-size="34">A</text>`;
+  $('bow').innerHTML = s;
+  return st;
+}
+
+function drawPulley(o, st) {
+  const b = o.bow, X = (v) => v * 1000, Y = (v) => -v * 1000, A = st.A, c = st.c, us = st.us, uc = st.uc, T1 = st.T1, T2 = st.T2;
+  const cx = X(c[0]), cy = Y(c[1]), vb = [cx - 58, cy - 37, 116, 76];
+  const L = (p, q, col, w, ex = '') => `<line x1="${X(p[0]).toFixed(2)}" y1="${Y(p[1]).toFixed(2)}" x2="${X(q[0]).toFixed(2)}" y2="${Y(q[1]).toFixed(2)}" stroke="${col}" stroke-width="${w}" ${ex}/>`;
+  const D = (p, r, col) => `<circle cx="${X(p[0]).toFixed(2)}" cy="${Y(p[1]).toFixed(2)}" r="${r}" fill="${col}"/>`;
+  const T = (p, dx, dy, txt, col = 'var(--text)') => `<text x="${(X(p[0]) + dx).toFixed(1)}" y="${(Y(p[1]) + dy).toFixed(1)}" font-size="5" style="fill:${col}">${txt}</text>`;
+  const far = (p, u, d) => [p[0] + u[0] * d, p[1] + u[1] * d];
+  const ds = (A[0] - T1[0]) * us[0] + (A[1] - T1[1]) * us[1], fs = [T1[0] + us[0] * ds, T1[1] + us[1] * ds];
+  const dc = (A[0] - T2[0]) * uc[0] + (A[1] - T2[1]) * uc[1], fc = [T2[0] + uc[0] * dc, T2[1] + uc[1] * dc];
+  const rim = [c[0] + b.r * Math.cos(P.gam - st.psi), c[1] + b.r * Math.sin(P.gam - st.psi)];
+  let s = `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${(b.r * 1000).toFixed(2)}" fill="none" stroke="#cfdcf0" stroke-width="1"/>`;
+  s += L(T1, far(T1, us, 0.4), 'var(--c-str)', 0.9) + L(T2, far(T2, uc, 0.4), '#8fb8ff', 0.9);
+  s += L(A, c, '#cfdcf0', 0.6) + L(A, fs, 'var(--c-ps)', 0.8, 'stroke-dasharray="2 1.6"') + L(A, fc, 'var(--c-pc)', 0.8, 'stroke-dasharray="2 1.6"');
+  s += D(A, 1.6, '#fff') + D(c, 0.9, '#7f93ad') + D(rim, 1.5, 'var(--c-ps)') + D(T1, 1.1, 'var(--c-str)') + D(T2, 1.1, '#8fb8ff');
+  s += (() => { const mx = (fs[0] + fc[0]) / 2 - A[0], my = (fs[1] + fc[1]) / 2 - A[1], l = Math.hypot(mx, my) || 1; const q = [A[0] - mx / l * 0.0055, A[1] - my / l * 0.0055]; return `<text x="${X(q[0]).toFixed(1)}" y="${Y(q[1]).toFixed(1)}" font-size="5" text-anchor="middle" dominant-baseline="middle" style="fill:var(--text);stroke:var(--bg);stroke-width:1.4px;paint-order:stroke">A</text>`; })() + T(c, 2, -2.5, 'c', '#7f93ad') + T(rim, 3, -3, 'rim mark', 'var(--c-ps)');
+  // labels of the two lever arms: a short tag on each dashed segment, the values in the corner
+  const tag = (foot, col, sub) => {
+    const vx = foot[0] - A[0], vy = foot[1] - A[1], len = Math.hypot(vx, vy) || 1e-9, ux = vx / len, uy = vy / len;
+    let px, py;
+    if (len < 0.012) { px = foot[0] + ux * 0.0045; py = foot[1] + uy * 0.0045; }          // short arm: beyond its end
+    else {
+      let nx = -uy, ny = ux; const mx = A[0] + 0.6 * vx, my = A[1] + 0.6 * vy;
+      if ((mx - c[0]) * nx + (my - c[1]) * ny < 0) { nx = -nx; ny = -ny; }                // on the side away from the centre
+      px = mx + nx * 0.0035; py = my + ny * 0.0035;
+    }
+    return `<text x="${X(px).toFixed(1)}" y="${Y(py).toFixed(1)}" font-size="5" text-anchor="middle" dominant-baseline="middle" style="fill:${col};stroke:var(--bg);stroke-width:1.4px;paint-order:stroke">p<tspan font-size="3.6" dy="1.2">${sub}</tspan></text>`;
+  };
+  s += tag(fs, 'var(--c-ps)', 's') + tag(fc, 'var(--c-pc)', 'c');
+  $('pul-note').innerHTML = `<span style="color:var(--c-ps)">p<sub>s</sub> = ${f(st.ps * 1000, 1)} mm</span> arm of the string · <span style="color:var(--c-pc)">p<sub>c</sub> = ${f(st.pc * 1000, 1)} mm</span> arm of the cable — distance of the axle A from the line of each stretch (dashed), eq. (4)`;
+  const sv = $('pulley'); sv.setAttribute('viewBox', vb.map((v) => v.toFixed(1)).join(' ')); sv.innerHTML = s;
+}
+
+/* ---------- charts ---------- */
+function chartF(o, D) {
+  const W = $('chart-f').clientWidth || 640, H = $('chart-f').clientHeight || 400, ml = 46, mr = 14, mt = 12, mb = 32, xmax = (XMAX_IN * INCH - P.DL_off - P.h_b) * 1000;
+  const Dfull = (o.xf - P.h_b) * 1000, sw = o.sweep, cv = o.conv;
+  const pc = [], pv = [];
+  for (let i = 0; i < sw.x.length; i++) { const d = (sw.x[i] - P.h_b) * 1000; if (d > xmax) break; pc.push([d, o.C * sw.F1[i]]); }
+  for (let i = 0; i < cv.x.length; i++) { const d = (cv.x[i] - P.h_b) * 1000; if (d > xmax) break; pv.push([d, o.C0 * cv.F1[i]]); }
+  let ymax = 0; for (const p of pc.concat(pv)) ymax = Math.max(ymax, p[1]); ymax = Math.ceil(ymax * 1.08 / 50) * 50;
+  const sx = (d) => ml + (W - ml - mr) * d / xmax, sy = (F) => H - mb - (H - mt - mb) * F / ymax;
+  const path = (pts, upto) => pts.filter((p) => p[0] <= upto).map((p, i) => (i ? 'L' : 'M') + sx(p[0]).toFixed(1) + ',' + sy(p[1]).toFixed(1)).join('');
+  const area = (pts, upto) => { const q = pts.filter((p) => p[0] <= upto); if (!q.length) return ''; return path(pts, upto) + `L${sx(q[q.length - 1][0]).toFixed(1)},${sy(0)}L${sx(q[0][0]).toFixed(1)},${sy(0)}Z`; };
+  const step = ymax > 400 ? 100 : 50;
+  let s = '<g class="axis">';
+  for (let F = 0; F <= ymax; F += step) s += `<line x1="${ml}" x2="${W - mr}" y1="${sy(F)}" y2="${sy(F)}" stroke="var(--grid)"/><text x="${ml - 6}" y="${sy(F) + 3}" text-anchor="end">${F}</text>`;
+  for (let d = 0; d <= xmax; d += 100) s += `<line y1="${mt}" y2="${H - mb}" x1="${sx(d)}" x2="${sx(d)}" stroke="var(--grid)"/><text x="${sx(d)}" y="${H - mb + 13}" text-anchor="middle">${d}</text>`;
+  s += `<text x="${(ml + W - mr) / 2}" y="${H - 3}" text-anchor="middle">draw from brace, mm</text><text x="12" y="${(mt + H - mb) / 2}" transform="rotate(-90 12 ${(mt + H - mb) / 2})" text-anchor="middle">draw force, N</text></g>`;
+  s += `<path d="${area(pc, Dfull)}" fill="var(--c-comp)" opacity=".18"/><path d="${area(pv, Dfull)}" fill="var(--c-conv)" opacity=".18"/>`;
+  s += `<rect x="${sx(0)}" y="${sy(P.F_pk)}" width="${sx(Dfull) - sx(0)}" height="${sy(0) - sy(P.F_pk)}" fill="none" stroke="#fff" stroke-opacity=".45" stroke-dasharray="5 4"/>`;
+  s += `<path d="${path(pc, xmax)}" fill="none" stroke="var(--c-comp)" stroke-width="2.4"/><path d="${path(pv, xmax)}" fill="none" stroke="var(--c-conv)" stroke-width="2.4"/>`;
+  s += `<line x1="${sx(Dfull)}" x2="${sx(Dfull)}" y1="${mt}" y2="${H - mb}" stroke="var(--text-dim)" stroke-dasharray="3 4"/><text x="${sx(Dfull) - 4}" y="${mt + 10}" text-anchor="end" font-size="10" style="fill:var(--text-dim)">full draw</text>`;
+  if (CMP === 'energy') s += `<text x="${sx(20)}" y="${mt + 12}" font-size="11" style="fill:var(--text-dim)">equal shaded areas: same energy, same arrow speed</text>`;
+  const Fc = o.C * interp(P.h_b + D / 1000, sw.x, sw.F1), Fv = o.C0 * interp(P.h_b + D / 1000, cv.x, cv.F1);
+  s += `<line x1="${sx(D)}" x2="${sx(D)}" y1="${mt}" y2="${H - mb}" stroke="var(--c-ps)" stroke-width="1.4"/><circle cx="${sx(D)}" cy="${sy(Fc)}" r="4.5" fill="var(--c-comp)"/><circle cx="${sx(D)}" cy="${sy(Fv)}" r="4.5" fill="var(--c-conv)"/>`;
+  $('chart-f').setAttribute('viewBox', `0 0 ${W} ${H}`); $('chart-f').innerHTML = s;
+  return Fv;
+}
+function chartP(o, D, o_st) {
+  const W = $('chart-p').clientWidth || 640, H = $('chart-p').clientHeight || 340, ml = 46, mr = 14, mt = 10, mb = 30, xmax = (XMAX_IN * INCH - P.DL_off - P.h_b) * 1000, sw = o.sweep;
+  const lo = 5, hi = 100, sx = (d) => ml + (W - ml - mr) * d / xmax, sy = (v) => H - mb - (H - mt - mb) * Math.log(v / lo) / Math.log(hi / lo);
+  const mk = (arr) => { let p = ''; for (let i = 0; i < sw.x.length; i++) { const d = (sw.x[i] - P.h_b) * 1000; if (d > xmax) break; p += (p ? 'L' : 'M') + sx(d).toFixed(1) + ',' + sy(Math.min(hi, Math.max(lo, arr[i] * 1000))).toFixed(1); } return p; };
+  let s = '<g class="axis">';
+  for (const v of [5, 10, 20, 50, 100]) s += `<line x1="${ml}" x2="${W - mr}" y1="${sy(v)}" y2="${sy(v)}" stroke="var(--grid)"/><text x="${ml - 6}" y="${sy(v) + 3}" text-anchor="end">${v}</text>`;
+  for (let d = 0; d <= xmax; d += 100) s += `<text x="${sx(d)}" y="${H - mb + 13}" text-anchor="middle">${d}</text>`;
+  s += `<text x="${(ml + W - mr) / 2}" y="${H - 3}" text-anchor="middle">draw from brace, mm</text><text x="12" y="${(mt + H - mb) / 2}" transform="rotate(-90 12 ${(mt + H - mb) / 2})" text-anchor="middle">mm (log)</text></g>`;
+  s += `<path d="${mk(sw.ps)}" fill="none" stroke="var(--c-ps)" stroke-width="2.2"/><path d="${mk(sw.pc)}" fill="none" stroke="var(--c-pc)" stroke-width="2.2"/>`;
+  s += `<line x1="${sx(D)}" x2="${sx(D)}" y1="${mt}" y2="${H - mb}" stroke="var(--c-ps)" stroke-width="1.4"/>`;
+  const vs = Math.min(hi, Math.max(lo, o_st.ps * 1000)), vc = Math.min(hi, Math.max(lo, o_st.pc * 1000));
+  const left = D > 0.6 * xmax, ax = left ? 'end' : 'start', dx = left ? -9 : 9, upS = vs >= vc;
+  s += `<circle cx="${sx(D)}" cy="${sy(vs)}" r="4" fill="var(--c-ps)"/><circle cx="${sx(D)}" cy="${sy(vc)}" r="4" fill="var(--c-pc)"/>`;
+  s += `<text x="${sx(D) + dx}" y="${sy(vs) + (upS ? -8 : 15)}" text-anchor="${ax}" font-size="12" style="fill:var(--c-ps);stroke:var(--bg);stroke-width:4px;paint-order:stroke">p_s (string) ${f(o_st.ps * 1000, 1)} mm</text>`;
+  s += `<text x="${sx(D) + dx}" y="${sy(vc) + (upS ? 15 : -8)}" text-anchor="${ax}" font-size="12" style="fill:var(--c-pc);stroke:var(--bg);stroke-width:4px;paint-order:stroke">p_c (cable) ${f(o_st.pc * 1000, 1)} mm</text>`;
+  $('chart-p').setAttribute('viewBox', `0 0 ${W} ${H}`); $('chart-p').innerHTML = s;
+}
+
+/* ---------- values ---------- */
+function strip(o, st, D, Fv) {
+  const C = o.C, cell = (k, v) => `<div>${k}<b>${v}</b></div>`;
+  $('strip').innerHTML =
+    cell('draw from brace', `${f(D, 0)} mm (${f(D / 25.4, 1)} in)`) + cell('draw force, eq. (11)', `${f(st.F * C, 1)} N (${f(st.F * C / LBF, 1)} lb)`) +
+    cell('string tied, same draw', `${f(Fv, 1)} N`) + cell('limb angle α', `${f(deg(st.a), 1)}°`) + cell('pulley turned ψ', `${f(deg(st.psi), 1)}°`) +
+    cell('arm of the string p<sub>s</sub>, eq. (4)', `${f(st.ps * 1000, 1)} mm`) + cell('arm of the cable p<sub>c</sub>', `${f(st.pc * 1000, 1)} mm`) +
+    cell('k = T<sub>c</sub>/T<sub>s</sub>, eq. (9)', f(st.k, 2)) + cell('string tension T<sub>s</sub>, eq. (12)', `${f(st.Ts * C, 0)} N`) + cell('cable tension T<sub>c</sub>', `${f(st.Tc * C, 0)} N`);
+}
+function tables(o) {
+  const r = (a, b, c, e) => `<tr><td>${a}</td><td>${b}</td><td>${c}</td><td class="eq">${e || ''}</td></tr>`;
+  $('t-out').innerHTML =
+    `<tr><th></th><th>eccentric pulleys</th><th>string tied, ${CMP === 'energy' ? 'same energy' : 'same peak'}</th><th></th></tr>` +
+    r('limb stiffness, N·m/rad', f(o.C, 0), f(o.C0, 0), '(18)') +
+    r('peak draw force, N (lb)', `${f(P.F_pk, 0)} (70)`, `${f(o.pk0, 0)} (${f(o.pk0 / LBF, 0)})`, '') +
+    r('holding force, N (lb)', `${f(o.hold, 0)} (${f(o.hold / LBF, 1)})`, `${f(o.hold0, 0)} (${f(o.hold0 / LBF, 0)})`, '') +
+    r('let-off', f(100 * o.letoff, 0) + ' %', '0 %', '') +
+    r('stored energy, J (ft·lb)', `${f(o.E, 1)} (${f(o.E / 1.3558179, 1)})`, `${f(o.E0, 1)} (${f(o.E0 / 1.3558179, 1)})`, '(15)') +
+    r('fill of the rectangle η', f(o.fill, 2), f(o.fillc, 2), '(16)') +
+    r('arrow speed, m/s (ft/s)', `${f(o.v, 1)} (${f(o.v / FPS, 0)})`, `${f(o.v0, 1)} (${f(o.v0 / FPS, 0)})`, '(17)') +
+    r('holding force ratio', '1', f(o.hold0 / o.hold, 1), '') +
+    r('limb rotation brace → full draw', f(deg(o.da), 1) + '°', f(deg(o.dac), 1) + '°', '') +
+    `<tr class="grp"><td colspan="4">eccentric pulleys only</td></tr>` +
+    r('radius of the pulley r', f(o.r * 1000, 1) + ' mm', '', '(19)') +
+    r('pulley turned at full draw', f(deg(o.psi_f), 0) + '°', '', '') +
+    r('force peaks at', f((o.x_pk - P.h_b) * 1000, 0) + ' mm', '', '') +
+    r('T<sub>s</sub> / T<sub>c</sub> at full draw', `${f(o.Ts_f, 0)} / ${f(o.Tc_f, 0)} N`, '', '(12)');
+  const li = (ok, name, text) => `<li><span class="mono">${name}</span><span class="${ok ? 'ok' : 'ko'}">${ok ? '✓' : '✗'}</span><span>${text}</span></li>`;
+  $('cond').innerHTML =
+    li(o.C1, 'C1', `let-off ${f(100 * o.letoff, 0)} % ≥ 50 %: the archer holds at most half the peak, eq. (20)`) +
+    li(o.C2, 'C2', `E = ${f(o.E, 1)} J ≥ E₀ = ${f(o.Ec, 1)} J: more energy than the bow with the string tied, eq. (21)`) +
+    li(o.C3, 'C3', `F = ${f(o.hold, 0)} N > 0 at full draw: the string stays taut, eq. (22)`);
+}
+
+window.addEventListener('resize', () => { try { update(false); } catch (e) {} });
+function update(full) {
+  const o = model(); const rs = $('rset');
+  $('v-er').textContent = (+$('er').value).toFixed(2); $('v-dl').textContent = (+$('dl').value).toFixed(2) + ' in'; $('v-ma').textContent = $('ma').value + ' gr';
+  if (!o) { rs.textContent = 'no solution (no valley before a full turn)'; return; }
+  rs.textContent = 'r = ' + f(o.r * 1000, 1) + ' mm';
+  $('leg-cmp').textContent = CMP === 'energy' ? 'same energy' : 'same peak';
+  $('cmp-note').textContent = CMP === 'energy' ? `stiffness ${f(o.C0, 0)} N·m/rad: same arrow speed, holds ${f(o.hold0, 0)} N` : `stiffness ${f(o.C0, 0)} N·m/rad: same peak, 311 N`;
+  const Dfull = (o.xf - P.h_b) * 1000, dr = $('draw'); dr.max = Math.round(Dfull);
+  if (full || +dr.value > Dfull) dr.value = Math.round(Dfull);
+  const D = +dr.value; $('v-d').textContent = f(D, 0) + ' mm';
+  const st = drawBow(o, D / 1000); drawPulley(o, st);
+  let Fv = o.C0 * interp(P.h_b + D / 1000, o.conv.x, o.conv.F1);
+  if (VIEW === 'diagrams') { Fv = chartF(o, D); chartP(o, D, st); } else tables(o);
+  strip(o, st, D, Fv);
+}
+
+function selfcheck() {
+  const o = evaluate(), keys = ['r', 'C', 'Cc', 'E', 'Ec', 'hold', 'letoff', 'v', 'vc'];
+  let worst = 0; for (const k of keys) worst = Math.max(worst, Math.abs(o[k] - REF[k]) / Math.abs(REF[k]));
+  const el = $('selfcheck'); el.className = worst < 1e-6 ? 'pass' : 'fail';
+  el.textContent = worst < 1e-6 ? 'self-check against the Python model, reference case: pass' : 'self-check FAILED (difference ' + worst.toExponential(1) + ')';
+}
+
+function seg(id, cb) {
+  for (const btn of $(id).querySelectorAll('button')) btn.addEventListener('click', () => {
+    for (const x of $(id).querySelectorAll('button')) x.classList.toggle('on', x === btn); cb(btn.dataset.v);
+  });
+}
+seg('cmp', (v) => { CMP = v; update(false); });
+seg('view', (v) => { VIEW = v; $('v-diagrams').classList.toggle('hidden', v !== 'diagrams'); $('v-values').classList.toggle('hidden', v !== 'values');
+  $('out-title').textContent = v === 'diagrams' ? 'Diagrams along the draw' : 'Values at full draw'; update(false); });
+for (const id of ['er', 'dl', 'ma']) $(id).addEventListener('input', () => { stop(); update(id !== 'ma'); });
+$('draw').addEventListener('input', () => { stop(); update(false); });
+function stop() { if (anim) { cancelAnimationFrame(anim); anim = null; $('play').textContent = '▶ draw'; } }
+$('play').addEventListener('click', () => {
+  if (anim) { stop(); return; }
+  const dr = $('draw'), max = +dr.max; if (+dr.value >= max) dr.value = 0; $('play').textContent = '❚❚ pause';
+  let t0 = null, v0 = +dr.value;
+  const step = (t) => { if (t0 === null) t0 = t; const v = v0 + (max - v0) * Math.min(1, (t - t0) / 3500); dr.value = v; update(false); if (v < max) anim = requestAnimationFrame(step); else stop(); };
+  anim = requestAnimationFrame(step);
+});
+$('reset').addEventListener('click', () => {   // back to the reference case, both switches to their first position, cursor at brace
+  stop(); $('er').value = 0.70; $('dl').value = 30; $('ma').value = 350;
+  for (const id of ['cmp', 'view']) $(id).querySelector('button').click();
+  update(true); $('draw').value = 0; update(false);
+});
+selfcheck(); update(true);
+</script>
+</body>
+</html>
